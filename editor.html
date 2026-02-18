@@ -5,117 +5,123 @@
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <style>
       #admin-panel {
-        position: fixed; top: 10px; left: 10px; width: 300px;
-        background: rgba(15, 23, 42, 0.95); color: #f8fafc;
-        padding: 20px; border-radius: 12px; font-family: 'Segoe UI', sans-serif;
-        z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        position: fixed; top: 10px; left: 10px; width: 280px;
+        background: rgba(15, 23, 42, 0.9); color: #f8fafc;
+        padding: 15px; border-radius: 12px; font-family: sans-serif;
+        z-index: 1000; backdrop-filter: blur(5px); box-shadow: 0 8px 32px rgba(0,0,0,0.5);
       }
-      .section-title { font-size: 14px; font-weight: bold; color: #818cf8; margin-bottom: 15px; text-transform: uppercase; }
-      .control-group { margin-bottom: 12px; }
-      label { display: block; font-size: 11px; margin-bottom: 4px; color: #94a3b8; }
-      input[type="range"] { width: 100%; cursor: pointer; }
-      .file-input { background: #1e293b; border: 1px dashed #475569; padding: 10px; border-radius: 6px; cursor: pointer; text-align: center; margin-bottom: 20px; }
-      button { background: #4f46e5; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-      button:hover { background: #4338ca; }
-      #output { background: #0f172a; padding: 10px; font-family: monospace; font-size: 10px; margin-top: 10px; border-radius: 4px; color: #10b981; overflow-wrap: break-word; }
+      .section-title { font-size: 12px; font-weight: bold; color: #818cf8; margin: 10px 0 5px; text-transform: uppercase; }
+      .control-group { margin-bottom: 8px; }
+      label { display: block; font-size: 10px; color: #94a3b8; }
+      input[type="range"] { width: 100%; }
+      .file-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px; }
+      .btn-file { background: #334155; font-size: 10px; padding: 8px; border-radius: 4px; text-align: center; cursor: pointer; border: 1px solid #475569; }
+      .btn-primary { background: #4f46e5; color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; }
+      .btn-view { background: #10b981; color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; margin-top: 5px; cursor: pointer; }
+      #output { background: #000; padding: 8px; font-family: monospace; font-size: 9px; margin-top: 10px; color: #10b981; border-radius: 4px; }
     </style>
   </head>
   <body>
 
     <div id="admin-panel">
-      <div class="section-title">Editor de Proyecto</div>
-      
-      <div class="file-input" onclick="document.getElementById('file-upload').click()">
-        <span id="file-name">Subir modelo .GLB</span>
-        <input type="file" id="file-upload" accept=".glb" style="display:none">
+      <div class="section-title">1. Cargar Archivos</div>
+      <div class="file-btns">
+        <div class="btn-file" onclick="document.getElementById('target-up').click()">SUBIR TARGET<input type="file" id="target-up" accept="image/*" style="display:none"></div>
+        <div class="btn-file" onclick="document.getElementById('model-up').click()">SUBIR MODELO<input type="file" id="model-up" accept=".glb" style="display:none"></div>
       </div>
 
+      <div class="section-title">2. Transformar</div>
       <div class="control-group">
         <label>Posición X / Y / Z</label>
-        <input type="range" id="posX" min="-5" max="5" step="0.05" value="0">
-        <input type="range" id="posY" min="-5" max="5" step="0.05" value="0">
-        <input type="range" id="posZ" min="-5" max="5" step="0.05" value="0">
+        <input type="range" id="posX" min="-3" max="3" step="0.01" value="0">
+        <input type="range" id="posY" min="-3" max="3" step="0.01" value="0">
+        <input type="range" id="posZ" min="-3" max="3" step="0.01" value="0">
       </div>
-
       <div class="control-group">
-        <label>Rotación (Giro Y)</label>
+        <label>Rotación Y (Giro)</label>
         <input type="range" id="rotY" min="0" max="360" step="1" value="0">
       </div>
-
       <div class="control-group">
-        <label>Escala General</label>
-        <input type="range" id="scale" min="0.01" max="10" step="0.05" value="1">
+        <label>Escala</label>
+        <input type="range" id="scale" min="0.01" max="5" step="0.01" value="1">
       </div>
 
-      <button onclick="copyToClipboard()">Copiar Configuración</button>
-      <div id="output">Esperando ajustes...</div>
+      <button class="btn-primary" onclick="copyToClipboard()">COPIAR CONFIG</button>
+      <button class="btn-view" onclick="changeView()">CAMBIAR VISTA</button>
+      <div id="output">Listo para editar</div>
     </div>
 
-    <a-scene background="color: #020617">
-      <a-assets id="assets-log"></a-assets>
+    <a-scene background="color: #0f172a" renderer="colorManagement: true">
+      <a-light type="directional" position="1 1 1" intensity="0.8"></a-light>
+      <a-light type="ambient" intensity="0.5"></a-light>
 
-      <a-grid-helper size="20" divisions="20" color="#1e293b"></a-grid-helper>
-      
-      <a-plane position="0 0.01 0" rotation="-90 0 0" width="2" height="2" color="#4f46e5" opacity="0.3"></a-plane>
-      <a-text value="MARCADOR (TARGET)" position="0 0.05 1.2" rotation="-90 0 0" align="center" width="4" color="#818cf8"></a-text>
+      <a-plane id="target-plane" position="0 0 0" rotation="-90 0 0" width="2" height="2" color="#4f46e5" opacity="0.9"></a-plane>
+      <a-grid-helper size="10" divisions="20" color="#1e293b"></a-grid-helper>
 
-      <a-entity id="preview-model" gltf-model="" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-entity>
+      <a-entity id="preview-model" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-entity>
 
-      <a-camera position="0 2 5" look-controls wasd-controls></a-camera>
+      <a-entity id="camera-rig" position="0 2 4">
+        <a-camera id="main-cam" look-controls="enabled: true" wasd-controls="enabled: false"></a-camera>
+      </a-entity>
     </a-scene>
 
     <script>
-      const modelEntity = document.querySelector('#preview-model');
-      const fileUpload = document.querySelector('#file-upload');
-      const output = document.querySelector('#output');
+      const model = document.querySelector('#preview-model');
+      const targetPlane = document.querySelector('#target-plane');
+      let currentView = 0;
 
-      // Función para cargar archivo local .glb
-      fileUpload.addEventListener('change', function(e) {
+      // Cargar Imagen Target
+      document.getElementById('target-up').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
-          document.getElementById('file-name').innerText = file.name;
-          const reader = new FileReader();
-          reader.onload = function(event) {
-            const contents = event.target.result;
-            // Crear una URL temporal para el archivo local
-            const blob = new Blob([contents], {type: 'model/gltf-binary'});
-            const url = URL.createObjectURL(blob);
-            modelEntity.setAttribute('gltf-model', url);
-          };
-          reader.readAsArrayBuffer(file);
+          const url = URL.createObjectURL(file);
+          targetPlane.setAttribute('src', url);
+          targetPlane.setAttribute('color', '#fff'); // Quitar el azul al cargar imagen
         }
       });
 
-      // Función de actualización de transformaciones
-      function updateTransform() {
-        const px = document.querySelector('#posX').value;
-        const py = document.querySelector('#posY').value;
-        const pz = document.querySelector('#posZ').value;
-        const ry = document.querySelector('#rotY').value;
-        const sc = document.querySelector('#scale').value;
-
-        modelEntity.setAttribute('position', `${px} ${py} ${pz}`);
-        modelEntity.setAttribute('rotation', `0 ${ry} 0`);
-        modelEntity.setAttribute('scale', `${sc} ${sc} ${sc}`);
-
-        const result = `pos: ${px} ${py} ${pz} | rot: 0 ${ry} 0 | scale: ${sc}`;
-        output.innerText = result;
-      }
-
-      document.querySelectorAll('input[type="range"]').forEach(input => {
-        input.addEventListener('input', updateTransform);
+      // Cargar Modelo GLB
+      document.getElementById('model-up').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const url = URL.createObjectURL(file);
+          model.setAttribute('gltf-model', url);
+        }
       });
 
-      function copyToClipboard() {
+      // Actualizar Transformaciones
+      function update() {
         const px = document.querySelector('#posX').value;
         const py = document.querySelector('#posY').value;
         const pz = document.querySelector('#posZ').value;
         const ry = document.querySelector('#rotY').value;
-        const sc = document.querySelector('#scale').value;
+        const s = document.querySelector('#scale').value;
+        model.setAttribute('position', `${px} ${py} ${pz}`);
+        model.setAttribute('rotation', `0 ${ry} 0`);
+        model.setAttribute('scale', `${s} ${s} ${s}`);
+        document.querySelector('#output').innerText = `pos: ${px} ${py} ${pz}\nrot: 0 ${ry} 0\nscale: ${s}`;
+      }
 
-        const finalCode = `position="${px} ${py} ${pz}" rotation="0 ${ry} 0" scale="${sc} ${sc} ${sc}"`;
-        navigator.clipboard.writeText(finalCode);
-        alert("¡Copiado! Pega esto en tu index.html de GitHub.");
+      document.querySelectorAll('input').forEach(i => i.addEventListener('input', update));
+
+      // Sistema de Vistas
+      function changeView() {
+        const rig = document.querySelector('#camera-rig');
+        const views = [
+          {p: "0 2 4", r: "0 0 0"},    // Perspectiva
+          {p: "0 0 4", r: "0 0 0"},    // Frente
+          {p: "0 5 0", r: "-90 0 0"},  // Cenital (Arriba)
+          {p: "4 0 0", r: "0 90 0"}    // Lateral
+        ];
+        currentView = (currentView + 1) % views.length;
+        rig.setAttribute('position', views[currentView].p);
+        rig.setAttribute('rotation', views[currentView].r);
+      }
+
+      function copyToClipboard() {
+        const val = document.querySelector('#output').innerText.replace(/\n/g, ' | ');
+        navigator.clipboard.writeText(val);
+        alert("Configuración copiada");
       }
     </script>
   </body>
