@@ -4,26 +4,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
+    <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
   </head>
+
   <body>
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene 
+      mindar-image="imageTargetSrc: ./targets.mind;" 
+      gesture-detector
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <a-asset-item id="sillaModel" src="./chair+3d+model.glb"></a-asset-item>
-        <a-asset-item id="tripoModel" src="./tripo_pbr_model_2.glb"></a-asset-item>
+        <a-asset-item id="silla" src="./chair+3d+model.glb"></a-asset-item>
+        <a-asset-item id="tripo" src="./tripo_pbr_model_2.glb"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-gltf-model rotation="0 0 0" position="0 0 0" scale="1 1 1" src="#sillaModel"></a-gltf-model>
+        <a-gltf-model 
+          src="#silla" 
+          position="0 0 0" 
+          scale="1 1 1" 
+          class="clickable"
+          gesture-handler="rotationFactor: 1; minScale: 0.1; maxScale: 10">
+        </a-gltf-model>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 1">
-        <a-gltf-model rotation="0 0 0" position="0 0 0" scale="1 1 1" src="#tripoModel"></a-gltf-model>
+        <a-gltf-model 
+          src="#tripo" 
+          position="0 0 0" 
+          scale="1 1 1" 
+          class="clickable"
+          gesture-handler="rotationFactor: 1; minScale: 0.1; maxScale: 10">
+        </a-gltf-model>
       </a-entity>
-
     </a-scene>
   </body>
 </html>
-
