@@ -12,7 +12,7 @@
         .stitch-card { background: #1e293b; border-radius: 16px; border: 1px solid #334155; }
         .accent-lavender { background-color: #6366f1; }
         input[type=range] { accent-color: #6366f1; height: 8px; }
-        .btn-view { background: rgba(30, 41, 59, 0.8); border: 1px solid #475569; padding: 8px; border-radius: 8px; font-size: 10px; font-weight: bold; }
+        .btn-view { background: rgba(30, 41, 59, 0.9); border: 1px solid #475569; padding: 10px; border-radius: 8px; font-size: 10px; font-weight: bold; color: white; }
     </style>
 </head>
 <body class="p-4 pb-10">
@@ -20,14 +20,14 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div class="stitch-card p-4">
             <h2 class="text-[10px] font-bold uppercase text-slate-400 mb-2">GitHub Token</h2>
-            <input type="password" id="gh-token" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
-            <button onclick="saveToken()" class="mt-2 text-xs text-indigo-400 underline">Guardar token en el móvil</button>
+            <input type="password" id="gh-token" placeholder="ghp_..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
+            <button onclick="saveToken()" class="mt-2 text-xs text-indigo-400 underline">Guardar token</button>
         </div>
         <div class="stitch-card p-4">
-            <h2 class="text-[10px] font-bold uppercase text-slate-400 mb-2">Archivos Locales</h2>
+            <h2 class="text-[10px] font-bold uppercase text-slate-400 mb-2">Archivos</h2>
             <div class="flex gap-2">
-                <label class="flex-1 bg-slate-700 p-2 rounded text-[10px] text-center cursor-pointer font-bold">📁 GLB<input type="file" accept=".glb" class="hidden" onchange="handleFile(this, 'model')"></label>
-                <label class="flex-1 bg-slate-700 p-2 rounded text-[10px] text-center cursor-pointer font-bold">🖼️ TARGET<input type="file" accept="image/*" class="hidden" onchange="handleFile(this, 'target')"></label>
+                <label class="flex-1 bg-slate-700 p-2 rounded text-[10px] text-center cursor-pointer font-bold uppercase">📁 GLB<input type="file" accept=".glb" class="hidden" onchange="handleFile(this, 'model')"></label>
+                <label class="flex-1 bg-slate-700 p-2 rounded text-[10px] text-center cursor-pointer font-bold uppercase">🖼️ TARGET<input type="file" accept="image/*" class="hidden" onchange="handleFile(this, 'target')"></label>
             </div>
         </div>
     </div>
@@ -68,12 +68,10 @@
         </div>
 
         <div class="stitch-card p-6 text-center flex flex-col justify-center border-t-4 border-t-indigo-500">
-            <button onclick="publish()" id="btn-pub" class="accent-lavender w-full py-4 rounded-2xl font-bold text-lg mb-4 shadow-xl active:scale-95 transition-transform">
-                🚀 PUBLICAR EN GITHUB
+            <button onclick="publish()" id="btn-pub" class="accent-lavender w-full py-4 rounded-2xl font-bold text-lg mb-4 shadow-xl">
+                🚀 GUARDAR EN GITHUB
             </button>
-            <div id="status-container" class="min-h-[20px]">
-                <p id="status" class="text-xs font-mono text-slate-400 italic font-bold">Visor listo. Desliza para rotar vista.</p>
-            </div>
+            <p id="status" class="text-xs font-mono text-slate-400">Listo para editar.</p>
         </div>
     </div>
 
@@ -83,15 +81,10 @@
 
         function handleFile(input, type) {
             const file = input.files[0]; if (!file) return;
-            if(type === 'model') {
-                document.getElementById('preview-entity').setAttribute('gltf-model', URL.createObjectURL(file));
-            } else {
+            if(type === 'model') document.getElementById('preview-entity').setAttribute('gltf-model', URL.createObjectURL(file));
+            else {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = document.getElementById('ground-img');
-                    img.setAttribute('src', e.target.result);
-                    img.setAttribute('visible', 'true');
-                };
+                reader.onload = (e) => { const img = document.getElementById('ground-img'); img.setAttribute('src', e.target.result); img.setAttribute('visible', 'true'); };
                 reader.readAsDataURL(file);
             }
         }
@@ -108,45 +101,56 @@
             document.getElementById('val-y').innerText = y; document.getElementById('val-s').innerText = s;
             document.getElementById('val-rx').innerText = rx; document.getElementById('val-ry').innerText = ry;
             const ent = document.getElementById('preview-entity');
-            ent.setAttribute('position', `0 ${y} 0`);
-            ent.setAttribute('scale', `${s} ${s} ${s}`);
-            ent.setAttribute('rotation', `${rx} ${ry} 0`);
+            ent.setAttribute('position', `0 ${y} 0`); ent.setAttribute('scale', `${s} ${s} ${s}`); ent.setAttribute('rotation', `${rx} ${ry} 0`);
         }
 
-        // --- FUNCIÓN DE PUBLICACIÓN CORREGIDA ---
         async function publish() {
-            const token = document.getElementById('gh-token').value;
+            const token = document.getElementById('gh-token').value.trim();
             const modelId = document.getElementById('model-id').value;
             const status = document.getElementById('status');
-            if(!token) return alert("⚠️ Error: Introduce el token ghp_");
+            const btn = document.getElementById('btn-pub');
 
-            status.innerText = "⏳ Conectando con GitHub...";
+            if(!token) return alert("⚠️ Introduce el token ghp_");
             
+            btn.disabled = true;
+            status.innerHTML = "⏳ Iniciando conexión...";
+
             try {
                 const repo = 'vellaescola/xacobeo-ar-experience';
                 const url = `https://api.github.com/repos/${repo}/contents/index.html`;
 
-                const res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
-                const data = await res.json();
+                const res = await fetch(url, { headers: { 'Authorization': `token ${token}`, 'Cache-Control': 'no-cache' } });
                 
-                // FIX: Decodificación robusta de Base64 (UTF-8 safe)
-                const binaryString = window.atob(data.content.replace(/\s/g, ''));
+                if (!res.ok) {
+                    const errorMsg = await res.json();
+                    throw new Error(`GitHub dice: ${errorMsg.message}`);
+                }
+
+                const data = await res.json();
+                if (!data.content) throw new Error("No se pudo leer el contenido del archivo.");
+
+                // DECODIFICACIÓN SEGURA
+                const cleanContent = data.content.replace(/\n/g, '').replace(/\r/g, '').trim();
+                const binaryString = window.atob(cleanContent);
                 const bytes = new Uint8Array(binaryString.length);
                 for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
                 let html = new TextDecoder().decode(bytes);
 
+                // VALORES ACTUALES
                 const y = document.getElementById('posY').value, s = document.getElementById('scale').value;
                 const rx = document.getElementById('rotX').value, ry = document.getElementById('rotY').value;
-
-                // Localizar y reemplazar atributos
-                const regex = new RegExp(`id="${modelId}"[\\s\\S]*?position=".*?"[\\s\\S]*?rotation=".*?"[\\s\\S]*?scale=".*?"`, 'g');
                 const asset = modelId === 'modelo-silla' ? 'silla' : 'tripo';
+
+                // REEMPLAZO CON REGEX (Busca el bloque exacto del modelo)
+                const regex = new RegExp(`id="${modelId}"[\\s\\S]*?position=".*?"[\\s\\S]*?rotation=".*?"[\\s\\S]*?scale=".*?"`, 'g');
                 const replacement = `id="${modelId}" src="#${asset}" position="0 ${y} 0" rotation="${rx} ${ry} 0" scale="${s} ${s} ${s}"`;
 
-                if(!regex.test(html)) throw new Error("No se encontró el modelo en index.html");
+                if(!regex.test(html)) throw new Error(`No se encontró el ID "${modelId}" en index.html`);
+                
+                status.innerText = "🚀 Inyectando coordenadas...";
                 html = html.replace(regex, replacement);
 
-                // Codificación segura para subir
+                // CODIFICACIÓN PARA SUBIDA
                 const utf8Bytes = new TextEncoder().encode(html);
                 const base64Content = btoa(String.fromCharCode(...utf8Bytes));
 
@@ -154,20 +158,23 @@
                     method: 'PUT',
                     headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        message: `Admin: Ajuste ${modelId}`, 
+                        message: `Admin: Update ${modelId} transform`, 
                         content: base64Content, 
                         sha: data.sha 
                     })
                 });
 
                 if(push.ok) {
-                    status.innerHTML = "<span class='text-emerald-400'>✅ ¡CAMBIOS GUARDADOS CON ÉXITO!</span>";
+                    status.innerHTML = "<span class='text-emerald-400 font-bold'>✅ ¡PUBLICADO CON ÉXITO!</span>";
                 } else {
                     const errorData = await push.json();
-                    throw new Error(errorData.message || "Error al subir");
+                    throw new Error(errorData.message);
                 }
+
             } catch (e) {
-                status.innerHTML = `<span class='text-red-400'>❌ Error: ${e.message}</span>`;
+                status.innerHTML = `<span class='text-red-400 font-bold'>❌ Error: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
             }
         }
     </script>
