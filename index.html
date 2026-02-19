@@ -8,7 +8,6 @@
     <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
     
     <style>
-      /* Esto evita que la pantalla rebote o haga zoom al tocarla */
       body { margin: 0; overflow: hidden; touch-action: none; }
     </style>
   </head>
@@ -31,23 +30,6 @@
 
       <a-entity mindar-image-target="targetIndex: 0">
         <a-gltf-model 
-          src="#silla" 
-          position="0 0 0" 
-          scale="1 1 1" 
-          class="clickable"
-          gesture-handler>
-        </a-gltf-model>
-      </a-entity>
-
-      <a-entity mindar-image-target="targetIndex: 1">
-        <a-gltf-model 
-          src="#tripo" 
-          position="0 0 0" 
-          scale="1 1 1" 
-          class="clickable"
-          gesture-handler>
-        </a-gltf-model>
-      </a-entity>
-    </a-scene>
-  </body>
-</html>
+          id="modelo-silla" 
+          src="#silla"
+          
