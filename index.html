@@ -85,20 +85,38 @@
     </a-scene>
 
     <script>
-        function startExperience() {
-            document.getElementById('splash').style.display = "none";
-            document.getElementById('scanner-line').style.display = "block";
+    function startExperience() {
+        document.getElementById('splash').style.display = "none";
+        document.getElementById('scanner-line').style.display = "block";
 
-            const sceneEl = document.querySelector('a-scene');
-            const arSystem = sceneEl.systems["mindar-image-system"];
-            arSystem.start();
-        }
+        const sceneEl = document.querySelector('a-scene');
+        const arSystem = sceneEl.systems["mindar-image-system"];
+        
+        // 1. Iniciamos el sistema
+        arSystem.start();
 
-        const targets = document.querySelectorAll('a-entity[mindar-image-target]');
-        targets.forEach(t => {
-            t.addEventListener("targetFound", () => { document.getElementById('scanner-line').style.display = "none"; });
-            t.addEventListener("targetLost", () => { document.getElementById('scanner-line').style.display = "block"; });
+        // 2. PARCHE PARA EL MARGEN NEGRO:
+        // Forzamos a A-Frame a recalcular el tamaño del canvas 
+        // después de un breve delay para que MindAR ya haya cargado el video.
+        setTimeout(() => {
+            if (sceneEl.canvas) {
+                sceneEl.canvas.style.width = "100vw";
+                sceneEl.canvas.style.height = "100vh";
+                window.dispatchEvent(new Event('resize'));
+            }
+        }, 1000);
+    }
+
+    const targets = document.querySelectorAll('a-entity[mindar-image-target]');
+    targets.forEach(t => {
+        t.addEventListener("targetFound", () => { 
+            document.getElementById('scanner-line').style.display = "none"; 
         });
+        t.addEventListener("targetLost", () => { 
+            document.getElementById('scanner-line').style.display = "block"; 
+        });
+    });
     </script>
+    
 </body>
 </html>
