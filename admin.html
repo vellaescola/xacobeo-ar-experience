@@ -3,81 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Xacobeo AR - Admin Pro</title>
+    <title>Xacobeo AR - Admin Final</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-orbit-controls@1.3.2/dist/aframe-orbit-controls.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: white; font-family: sans-serif; }
-        .stitch-card { background: #1e293b; border-radius: 16px; border: 1px solid #334155; }
-        .accent-lavender { background-color: #6366f1; }
-        input[type=range] { accent-color: #6366f1; height: 8px; }
-        .btn-view { background: rgba(30, 41, 59, 0.9); border: 1px solid #475569; padding: 10px; border-radius: 8px; font-size: 10px; font-weight: bold; color: white; }
+        .stitch-card { background: #1e293b; border-radius: 16px; border: 1px solid #334155; margin-bottom: 1rem; }
+        input[type=range] { accent-color: #6366f1; height: 8px; width: 100%; }
+        .btn-view { background: #334155; padding: 8px; border-radius: 6px; font-size: 10px; font-weight: bold; }
     </style>
 </head>
-<body class="p-4 pb-10">
+<body class="p-4">
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div class="stitch-card p-4">
-            <h2 class="text-[10px] font-bold uppercase text-slate-400 mb-2">GitHub Token</h2>
-            <input type="password" id="gh-token" placeholder="ghp_..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
-            <button onclick="saveToken()" class="mt-2 text-xs text-indigo-400 underline">Guardar token</button>
+    <div class="stitch-card p-4">
+        <h2 class="text-[10px] font-bold text-slate-400 uppercase mb-2">Seguridad y Archivos</h2>
+        <input type="password" id="gh-token" placeholder="Token ghp_..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white mb-3">
+        <div class="flex gap-2">
+            <label class="flex-1 bg-indigo-600 p-2 rounded text-[10px] text-center cursor-pointer font-bold uppercase">📁 GLB<input type="file" accept=".glb" class="hidden" onchange="handleFile(this, 'model')"></label>
+            <label class="flex-1 bg-indigo-600 p-2 rounded text-[10px] text-center cursor-pointer font-bold uppercase">🖼️ Target<input type="file" accept="image/*" class="hidden" onchange="handleFile(this, 'target')"></label>
         </div>
-        <div class="stitch-card p-4">
-            <h2 class="text-[10px] font-bold uppercase text-slate-400 mb-2">Archivos</h2>
-            <div class="flex gap-2">
-                <label class="flex-1 bg-slate-700 p-2 rounded text-[10px] text-center cursor-pointer font-bold uppercase">📁 GLB<input type="file" accept=".glb" class="hidden" onchange="handleFile(this, 'model')"></label>
-                <label class="flex-1 bg-slate-700 p-2 rounded text-[10px] text-center cursor-pointer font-bold uppercase">🖼️ TARGET<input type="file" accept="image/*" class="hidden" onchange="handleFile(this, 'target')"></label>
+    </div>
+
+    <div class="stitch-card overflow-hidden">
+        <div class="h-80 bg-black relative">
+            <div class="absolute top-2 left-2 z-50 flex gap-1">
+                <button onclick="setView('top')" class="btn-view">CENITAL</button>
+                <button onclick="setView('front')" class="btn-view">FRONTAL</button>
+            </div>
+            <a-scene embedded style="height: 100%; width: 100%" vr-mode-ui="enabled: false">
+                <a-sky color="#0f172a"></a-sky>
+                <a-image id="ground-img" position="0 0 0" rotation="-90 0 0" width="4" height="4" visible="false"></a-image>
+                <a-entity id="preview-entity" gltf-model="" position="0 0.1 0" rotation="0 0 0" scale="1 1 1"></a-entity>
+                <a-entity id="cam" camera orbit-controls="target: 0 0.1 0; initialPosition: 0 2 5; enablePan: false;"></a-entity>
+            </a-scene>
+        </div>
+
+        <div class="p-4 space-y-4 bg-slate-900/40">
+            <select id="target-index" class="w-full bg-slate-800 border border-slate-700 p-2 rounded text-sm font-bold text-indigo-300">
+                <option value="0">Editar: Modelo en Target Index 0 (Silla)</option>
+                <option value="1">Editar: Modelo en Target Index 1 (Tripo)</option>
+            </select>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-[10px] text-slate-400 uppercase">Altura Y: <span id="val-y">0.1</span></label>
+                <input type="range" id="posY" min="-1" max="3" step="0.01" value="0.1" oninput="apply()"></div>
+                <div><label class="text-[10px] text-slate-400 uppercase">Escala: <span id="val-s">1.0</span></label>
+                <input type="range" id="scale" min="0.1" max="10" step="0.1" value="1" oninput="apply()"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-[10px] text-indigo-400 font-bold uppercase">Rotación X: <span id="val-rx">0</span>°</label>
+                <input type="range" id="rotX" min="0" max="360" step="1" value="0" oninput="apply()"></div>
+                <div><label class="text-[10px] text-indigo-400 font-bold uppercase">Giro Y: <span id="val-ry">0</span>°</label>
+                <input type="range" id="rotY" min="0" max="360" step="1" value="0" oninput="apply()"></div>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="stitch-card overflow-hidden">
-            <div class="h-80 bg-black relative">
-                <div class="absolute top-2 left-2 z-50 flex gap-2">
-                    <button onclick="setView('top')" class="btn-view">VISTA CENITAL</button>
-                    <button onclick="setView('front')" class="btn-view">VISTA FRONTAL</button>
-                </div>
-                <a-scene embedded style="height: 100%; width: 100%" vr-mode-ui="enabled: false">
-                    <a-sky color="#0f172a"></a-sky>
-                    <a-image id="ground-img" position="0 0 0" rotation="-90 0 0" width="4" height="4" visible="false"></a-image>
-                    <a-entity id="preview-entity" gltf-model="" position="0 0.5 0" rotation="0 0 0" scale="1 1 1"></a-entity>
-                    <a-entity id="cam" camera orbit-controls="target: 0 0.5 0; initialPosition: 0 2 5; enablePan: false;"></a-entity>
-                </a-scene>
-            </div>
-
-            <div class="p-4 space-y-4 bg-slate-900/40">
-                <select id="model-id" class="w-full bg-slate-800 border border-slate-700 p-2 rounded text-sm font-bold text-indigo-300">
-                    <option value="modelo-silla">Silla (Target Index 0)</option>
-                    <option value="modelo-tripo">Tripo (Target Index 1)</option>
-                </select>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] text-slate-400">ALTURA (Y): <span id="val-y">0.5</span></label>
-                    <input type="range" id="posY" min="-2" max="5" step="0.01" value="0.5" class="w-full" oninput="apply()"></div>
-                    <div><label class="text-[10px] text-slate-400">ESCALA: <span id="val-s">1.0</span></label>
-                    <input type="range" id="scale" min="0.1" max="10" step="0.1" value="1" class="w-full" oninput="apply()"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] text-indigo-400 font-bold uppercase">ROTACIÓN X: <span id="val-rx">0</span>°</label>
-                    <input type="range" id="rotX" min="0" max="360" step="1" value="0" class="w-full" oninput="apply()"></div>
-                    <div><label class="text-[10px] text-indigo-400 font-bold uppercase">ROTACIÓN Y: <span id="val-ry">0</span>°</label>
-                    <input type="range" id="rotY" min="0" max="360" step="1" value="0" class="w-full" oninput="apply()"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="stitch-card p-6 text-center flex flex-col justify-center border-t-4 border-t-indigo-500">
-            <button onclick="publish()" id="btn-pub" class="accent-lavender w-full py-4 rounded-2xl font-bold text-lg mb-4 shadow-xl">
-                🚀 GUARDAR EN GITHUB
-            </button>
-            <p id="status" class="text-xs font-mono text-slate-400">Listo para editar.</p>
-        </div>
+    <div class="stitch-card p-6 text-center">
+        <button onclick="publish()" id="btn-pub" class="bg-indigo-500 w-full py-4 rounded-2xl font-bold text-lg mb-2 shadow-lg active:scale-95 transition-transform">
+            🚀 GUARDAR EN GITHUB
+        </button>
+        <p id="status" class="text-xs font-mono text-slate-400 italic">Listo para sincronizar.</p>
     </div>
 
     <script>
         document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
-        function saveToken() { localStorage.setItem('gh_token', document.getElementById('gh-token').value); alert("✅ Token guardado"); }
 
         function handleFile(input, type) {
             const file = input.files[0]; if (!file) return;
@@ -91,8 +81,8 @@
 
         function setView(view) {
             const cam = document.getElementById('cam');
-            if(view === 'top') cam.setAttribute('position', '0 8 0');
-            if(view === 'front') cam.setAttribute('position', '0 0.5 6');
+            if(view === 'top') cam.setAttribute('position', '0 6 0');
+            if(view === 'front') cam.setAttribute('position', '0 0.5 5');
         }
 
         function apply() {
@@ -106,73 +96,51 @@
 
         async function publish() {
             const token = document.getElementById('gh-token').value.trim();
-            const modelId = document.getElementById('model-id').value;
+            const targetIdx = document.getElementById('target-index').value;
             const status = document.getElementById('status');
             const btn = document.getElementById('btn-pub');
 
-            if(!token) return alert("⚠️ Introduce el token ghp_");
-            
+            if(!token) return alert("⚠️ Error: Introduce el token");
+            localStorage.setItem('gh_token', token);
             btn.disabled = true;
-            status.innerHTML = "⏳ Iniciando conexión...";
+            status.innerHTML = "⏳ Leyendo index.html...";
 
             try {
-                const repo = 'vellaescola/xacobeo-ar-experience';
-                const url = `https://api.github.com/repos/${repo}/contents/index.html`;
-
-                const res = await fetch(url, { headers: { 'Authorization': `token ${token}`, 'Cache-Control': 'no-cache' } });
-                
-                if (!res.ok) {
-                    const errorMsg = await res.json();
-                    throw new Error(`GitHub dice: ${errorMsg.message}`);
-                }
-
+                const url = `https://api.github.com/repos/vellaescola/xacobeo-ar-experience/contents/index.html`;
+                const res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
                 const data = await res.json();
-                if (!data.content) throw new Error("No se pudo leer el contenido del archivo.");
+                
+                // Decodificación UTF-8 robusta
+                const html = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
 
-                // DECODIFICACIÓN SEGURA
-                const cleanContent = data.content.replace(/\n/g, '').replace(/\r/g, '').trim();
-                const binaryString = window.atob(cleanContent);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-                let html = new TextDecoder().decode(bytes);
-
-                // VALORES ACTUALES
+                // PARÁMETROS NUEVOS
                 const y = document.getElementById('posY').value, s = document.getElementById('scale').value;
                 const rx = document.getElementById('rotX').value, ry = document.getElementById('rotY').value;
-                const asset = modelId === 'modelo-silla' ? 'silla' : 'tripo';
 
-                // REEMPLAZO CON REGEX (Busca el bloque exacto del modelo)
-                const regex = new RegExp(`id="${modelId}"[\\s\\S]*?position=".*?"[\\s\\S]*?rotation=".*?"[\\s\\S]*?scale=".*?"`, 'g');
-                const replacement = `id="${modelId}" src="#${asset}" position="0 ${y} 0" rotation="${rx} ${ry} 0" scale="${s} ${s} ${s}"`;
+                // REGEX MEJORADA: Busca el modelo dentro del targetIndex indicado
+                // Busca la etiqueta <a-entity ... targetIndex: X"> y luego el <a-gltf-model> que le sigue
+                const regexStr = `(targetIndex:\\s*${targetIdx}["'][\\s\\S]*?<a-gltf-model[\\s\\S]*?position=")([^"]*)("[\\s\\S]*?rotation=")([^"]*)("[\\s\\S]*?scale=")([^"]*)(")`;
+                const regex = new RegExp(regexStr, 'i');
 
-                if(!regex.test(html)) throw new Error(`No se encontró el ID "${modelId}" en index.html`);
-                
-                status.innerText = "🚀 Inyectando coordenadas...";
-                html = html.replace(regex, replacement);
+                if(!regex.test(html)) {
+                    throw new Error(`No se encontró el bloque del Target ${targetIdx}. Revisa si en el index.html dice "targetIndex: ${targetIdx}"`);
+                }
 
-                // CODIFICACIÓN PARA SUBIDA
-                const utf8Bytes = new TextEncoder().encode(html);
-                const base64Content = btoa(String.fromCharCode(...utf8Bytes));
+                const newHtml = html.replace(regex, `$10 ${y} 0$3${rx} ${ry} 0$5${s} ${s} ${s}$7`);
+                const base64Content = btoa(unescape(encodeURIComponent(newHtml)));
 
+                status.innerHTML = "🚀 Subiendo cambios...";
                 const push = await fetch(url, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        message: `Admin: Update ${modelId} transform`, 
-                        content: base64Content, 
-                        sha: data.sha 
-                    })
+                    body: JSON.stringify({ message: `Admin: Ajuste Target ${targetIdx}`, content: base64Content, sha: data.sha })
                 });
 
-                if(push.ok) {
-                    status.innerHTML = "<span class='text-emerald-400 font-bold'>✅ ¡PUBLICADO CON ÉXITO!</span>";
-                } else {
-                    const errorData = await push.json();
-                    throw new Error(errorData.message);
-                }
+                if(push.ok) status.innerHTML = "<span class='text-emerald-400 font-bold'>✅ ¡PUBLICADO CORRECTAMENTE!</span>";
+                else throw new Error("GitHub rechazó la subida. Revisa permisos del token.");
 
             } catch (e) {
-                status.innerHTML = `<span class='text-red-400 font-bold'>❌ Error: ${e.message}</span>`;
+                status.innerHTML = `<span class='text-red-400 font-bold'>❌ ${e.message}</span>`;
             } finally {
                 btn.disabled = false;
             }
