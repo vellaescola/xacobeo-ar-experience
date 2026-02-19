@@ -1,35 +1,49 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Xacobeo AR - Experiencia</title>
+    <title>Xacobeo AR - Escáner</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet"/>
     
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { "primary": "#9e26e8", "background-dark": "#0f172a" },
-                    fontFamily: { "display": ["Space Grotesk", "sans-serif"] }
-                }
-            }
-        }
-    </script>
-
     <style>
-        body { font-family: 'Space Grotesk', sans-serif; background-color: #0f172a; margin: 0; overflow: hidden; }
-        .glass-ui { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(158, 38, 232, 0.3); }
-        .glow-button { box-shadow: 0 0 20px rgba(158, 38, 232, 0.4); transition: all 0.3s ease; }
-        .glow-button:active { transform: scale(0.95); box-shadow: 0 0 5px rgba(158, 38, 232, 0.2); }
+        body { margin: 0; overflow: hidden; font-family: 'Space Grotesk', sans-serif; background-color: #000; }
         
-        /* Pantalla de carga/inicio */
+        /* Contenedor de la cámara para que sea realmente fullscreen */
+        .mindar-ui-overlay.mindar-ui-loading { background: #0f172a !important; }
+        
+        /* Efecto de Barra Láser de Escaneo */
+        #scanner-line {
+            position: fixed; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(to bottom, transparent, #9e26e8, transparent);
+            box-shadow: 0 0 15px #9e26e8;
+            z-index: 40; top: 0;
+            animation: scan 3s linear infinite;
+            display: none; /* Se activa al empezar */
+        }
+
+        @keyframes scan {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+
+        /* UI de Instrucciones */
+        #ui-hint {
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+            z-index: 50; width: 80%; max-width: 300px;
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(10px);
+            border: 1px solid rgba(158, 38, 232, 0.4); padding: 15px;
+            border-radius: 20px; text-align: center; color: white;
+            opacity: 0; transition: opacity 0.5s;
+        }
+
         #splash {
-            position: fixed; inset: 0; z-index: 9999;
+            position: fixed; inset: 0; z-index: 100;
             background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
@@ -38,32 +52,24 @@
 
 <body>
 
-    <div id="splash" class="p-6 text-center">
-        <div class="mb-8 size-24 rounded-3xl bg-primary/20 flex items-center justify-center border border-primary/30 animate-pulse">
-            <svg class="w-12 h-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2 1m0 0L10 4m2 1v2.5M4 7l2-1M4 7l2 1M4 7v2.5M10 13l-2 1m2-1l-2-1m2 1v2.5M16 13l-2 1m2-1l-2-1m2 1v2.5" />
+    <div id="splash" class="p-8 text-center">
+        <div class="mb-8 size-20 rounded-3xl bg-primary/20 flex items-center justify-center border border-purple-500/30">
+            <svg class="w-10 h-10 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
             </svg>
         </div>
-
-        <h1 class="text-white text-3xl font-bold tracking-tight mb-2">Xacobeo AR</h1>
-        <p class="text-primary/80 text-xs font-medium uppercase tracking-[0.2em] mb-10">Premium Experience</p>
-        
-        <div class="max-w-xs text-slate-400 text-sm mb-12 leading-relaxed">
-            Bienvenido a la experiencia de Realidad Aumentada. Apunta con tu cámara a los paneles informativos para visualizar los modelos.
-        </div>
-
-        <button onclick="startExperience()" class="glow-button bg-primary text-white font-bold py-5 px-10 rounded-2xl text-lg flex items-center gap-3">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        <h1 class="text-white text-3xl font-bold mb-2">Xacobeo AR</h1>
+        <p class="text-purple-400 text-xs font-bold uppercase tracking-widest mb-10">Escáner de Patrimonio</p>
+        <button onclick="startExperience()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 px-10 rounded-2xl shadow-xl active:scale-95 transition-all">
             EMPEZAR ESCANEO
         </button>
     </div>
 
-    <div id="scanning-ui" class="hidden fixed bottom-10 left-0 right-0 z-50 px-6 pointer-events-none">
-        <div class="glass-ui max-w-xs mx-auto py-4 px-6 rounded-2xl text-center">
-            <div class="flex items-center justify-center gap-3">
-                <div class="size-2 bg-primary rounded-full animate-ping"></div>
-                <span class="text-white text-xs font-bold uppercase tracking-widest">Buscando panel...</span>
-            </div>
+    <div id="scanner-line"></div>
+    <div id="ui-hint">
+        <div class="flex items-center justify-center gap-3">
+            <div class="size-2 bg-purple-500 rounded-full animate-ping"></div>
+            <span class="text-xs font-bold tracking-tighter uppercase">Apunta al panel informativo</span>
         </div>
     </div>
 
@@ -79,7 +85,7 @@
         <a-asset-item id="tripo" src="./tripo_pbr_model_2.glb"></a-asset-item>
       </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="far: 10000; objects: .clickable"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
         <a-gltf-model id="modelo-silla" src="#silla" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
@@ -92,34 +98,33 @@
 
     <script>
         function startExperience() {
-            // Efecto de transición
+            // Transición Splash
             const splash = document.getElementById('splash');
-            splash.style.transition = "opacity 0.8s ease, transform 0.8s ease";
             splash.style.opacity = "0";
-            splash.style.transform = "scale(1.1)";
-            
-            setTimeout(() => {
-                splash.style.display = "none";
-                document.getElementById('scanning-ui').classList.remove('hidden');
-            }, 800);
+            setTimeout(() => { 
+                splash.style.display = "none"; 
+                document.getElementById('ui-hint').style.opacity = "1";
+                document.getElementById('scanner-line').style.display = "block";
+            }, 500);
 
-            // Iniciar cámara y motor AR
+            // Iniciar Motor
             const sceneEl = document.querySelector('a-scene');
             const arSystem = sceneEl.systems["mindar-image-system"];
             arSystem.start();
         }
 
-        // Ocultar mensaje de "Buscando" cuando se detecta un target
+        // Lógica de detección para ocultar la barra de escaneo al encontrar el objeto
         const targets = document.querySelectorAll('a-entity[mindar-image-target]');
         targets.forEach(t => {
             t.addEventListener("targetFound", () => {
-                document.getElementById('scanning-ui').style.opacity = "0";
+                document.getElementById('scanner-line').style.display = "none";
+                document.getElementById('ui-hint').style.opacity = "0";
             });
             t.addEventListener("targetLost", () => {
-                document.getElementById('scanning-ui').style.opacity = "1";
+                document.getElementById('scanner-line').style.display = "block";
+                document.getElementById('ui-hint').style.opacity = "1";
             });
         });
     </script>
-
 </body>
 </html>
