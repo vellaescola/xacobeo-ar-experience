@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Xacobeo AR - Escáner</title>
+    <title>Xacobeo AR</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -13,11 +13,17 @@
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Space Grotesk', sans-serif; background-color: #000; }
         
-        /* PARCHE FULLSCREEN: Estira el video sin desplazar el sistema de coordenadas */
-        video {
-            object-fit: cover !important;
+        /* ESTO FUERZA A QUE EL MOTOR OCUPE TODO EL ANCHO Y ALTO DISPONIBLE */
+        .mindar-ui-overlay { pointer-events: none; }
+        
+        /* Ajuste para que el video y el canvas ignoren los bordes negros */
+        video, canvas {
             width: 100vw !important;
             height: 100vh !important;
+            object-fit: cover !important;
+            top: 0 !important;
+            left: 0 !important;
+            position: absolute !important;
         }
 
         #scanner-line {
@@ -29,20 +35,7 @@
             display: none;
         }
 
-        @keyframes scan {
-            0% { top: 0%; }
-            50% { top: 100%; }
-            100% { top: 0%; }
-        }
-
-        #ui-hint {
-            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-            z-index: 50; width: 80%; max-width: 300px;
-            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(10px);
-            border: 1px solid rgba(158, 38, 232, 0.4); padding: 15px;
-            border-radius: 20px; text-align: center; color: white;
-            opacity: 0; transition: opacity 0.5s;
-        }
+        @keyframes scan { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
 
         #splash {
             position: fixed; inset: 0; z-index: 100;
@@ -61,24 +54,17 @@
             </svg>
         </div>
         <h1 class="text-white text-3xl font-bold mb-2">Xacobeo AR</h1>
-        <p class="text-purple-400 text-xs font-bold uppercase tracking-widest mb-10">Escáner de Patrimonio</p>
-        <button onclick="startExperience()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 px-10 rounded-2xl shadow-xl active:scale-95 transition-all">
-            EMPEZAR ESCANEO
-        </button>
+        <p class="text-purple-400 text-xs font-bold uppercase tracking-widest mb-10 text-center">Escáner de Patrimonio</p>
+        <button onclick="startExperience()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 px-10 rounded-2xl shadow-xl active:scale-95 transition-all">EMPEZAR ESCANEO</button>
     </div>
 
     <div id="scanner-line"></div>
-    <div id="ui-hint">
-        <div class="flex items-center justify-center gap-3">
-            <div class="size-2 bg-purple-500 rounded-full animate-ping"></div>
-            <span class="text-xs font-bold tracking-tighter uppercase">Apunta al panel informativo</span>
-        </div>
-    </div>
 
     <a-scene 
       mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;" 
+      embedded
       color-space="sRGB" 
-      renderer="colorManagement: true, physicallyCorrectLights" 
+      renderer="colorManagement: true, physicallyCorrectLights: true" 
       vr-mode-ui="enabled: false" 
       device-orientation-permission-ui="enabled: false">
       
@@ -87,26 +73,21 @@
         <a-asset-item id="tripo" src="./tripo_pbr_model_2.glb"></a-asset-item>
       </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="far: 10000; objects: .clickable"></a-camera>
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-gltf-model id="modelo-silla" src="#silla" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
+        <a-gltf-model src="#silla" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 1">
-        <a-gltf-model id="modelo-tripo" src="#tripo" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
+        <a-gltf-model src="#tripo" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
       </a-entity>
     </a-scene>
 
     <script>
         function startExperience() {
-            const splash = document.getElementById('splash');
-            splash.style.opacity = "0";
-            setTimeout(() => { 
-                splash.style.display = "none"; 
-                document.getElementById('ui-hint').style.opacity = "1";
-                document.getElementById('scanner-line').style.display = "block";
-            }, 500);
+            document.getElementById('splash').style.display = "none";
+            document.getElementById('scanner-line').style.display = "block";
 
             const sceneEl = document.querySelector('a-scene');
             const arSystem = sceneEl.systems["mindar-image-system"];
@@ -115,14 +96,8 @@
 
         const targets = document.querySelectorAll('a-entity[mindar-image-target]');
         targets.forEach(t => {
-            t.addEventListener("targetFound", () => {
-                document.getElementById('scanner-line').style.display = "none";
-                document.getElementById('ui-hint').style.opacity = "0";
-            });
-            t.addEventListener("targetLost", () => {
-                document.getElementById('scanner-line').style.display = "block";
-                document.getElementById('ui-hint').style.opacity = "1";
-            });
+            t.addEventListener("targetFound", () => { document.getElementById('scanner-line').style.display = "none"; });
+            t.addEventListener("targetLost", () => { document.getElementById('scanner-line').style.display = "block"; });
         });
     </script>
 </body>
