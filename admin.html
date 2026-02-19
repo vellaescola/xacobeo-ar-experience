@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xacobeo AR - Admin Panel</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: white; font-family: sans-serif; }
@@ -15,11 +15,20 @@
     </style>
 </head>
 <body class="p-4">
-    <div class="stitch-card p-4 mb-6">
-        <h2 class="text-xs font-bold uppercase text-slate-400 mb-2">Configuración de Seguridad</h2>
-        <input type="password" id="gh-token" placeholder="Pega tu Token ghp_..." 
-               class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm">
-        <button onclick="saveToken()" class="mt-2 text-xs text-indigo-400 underline">Guardar en este dispositivo</button>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="stitch-card p-4">
+            <h2 class="text-xs font-bold uppercase text-slate-400 mb-2">1. Token de GitHub</h2>
+            <input type="password" id="gh-token" placeholder="ghp_..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm">
+            <button onclick="saveToken()" class="mt-2 text-xs text-indigo-400 underline">Guardar token</button>
+        </div>
+        <div class="stitch-card p-4">
+            <h2 class="text-xs font-bold uppercase text-slate-400 mb-2">2. Seleccionar Modelo</h2>
+            <select id="model-selector" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm" onchange="updatePreviewModel()">
+                <option value="modelo-silla">Silla (Target 0)</option>
+                <option value="modelo-tripo">Tripo (Target 1)</option>
+            </select>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -28,58 +37,77 @@
                 <a-scene embedded style="height: 100%; width: 100%">
                     <a-sky color="#0f172a"></a-sky>
                     <a-plane position="0 0 0" rotation="-90 0 0" width="4" height="4" color="#1e293b"></a-plane>
-                    <a-entity id="preview-model" gltf-model="url(https://vellaescola.github.io/xacobeo-ar-experience/modelo.glb)" position="0 0.5 0"></a-entity>
+                    <a-entity id="preview-entity" gltf-model="" position="0 0.5 0" rotation="0 0 0" scale="1 1 1"></a-entity>
                     <a-entity camera position="0 2 4" look-controls></a-entity>
                 </a-scene>
             </div>
             <div class="p-4 space-y-4">
-                <h3 class="font-bold">Ajustes de Escena</h3>
+                <h3 class="font-bold">Controles Visuales</h3>
                 <div><label class="text-xs text-slate-400">Altura (Y)</label>
-                <input type="range" id="posY" min="-1" max="4" step="0.1" value="0.5" class="w-full" oninput="updatePreview()"></div>
+                <input type="range" id="posY" min="-2" max="5" step="0.1" value="0" class="w-full" oninput="applyTransform()"></div>
                 <div><label class="text-xs text-slate-400">Escala</label>
-                <input type="range" id="scale" min="0.1" max="3" step="0.1" value="1" class="w-full" oninput="updatePreview()"></div>
-                <div><label class="text-xs text-slate-400">Giro (Rotación Y)</label>
-                <input type="range" id="rotY" min="0" max="360" step="1" value="0" class="w-full" oninput="updatePreview()"></div>
+                <input type="range" id="scale" min="0.01" max="5" step="0.1" value="1" class="w-full" oninput="applyTransform()"></div>
+                <div><label class="text-xs text-slate-400">Rotación (Y)</label>
+                <input type="range" id="rotY" min="0" max="360" step="1" value="0" class="w-full" oninput="applyTransform()"></div>
             </div>
         </div>
 
-        <div class="flex flex-col justify-center">
-            <div class="stitch-card p-8 text-center">
-                <div class="mb-4 text-4xl">✨</div>
-                <h2 class="text-xl font-bold mb-2">Publicar Cambios</h2>
-                <p class="text-sm text-slate-400 mb-6">Al pulsar, actualizaremos el index.html de tu repositorio automáticamente.</p>
-                <button onclick="publish()" id="btn-pub" class="w-full accent-lavender hover:opacity-90 py-4 rounded-2xl font-bold transition-all">
-                    ACTUALIZAR REPOSITORIO
-                </button>
-                <p id="log" class="mt-4 text-xs font-mono text-slate-500"></p>
-            </div>
+        <div class="stitch-card p-8 text-center flex flex-col justify-center">
+            <div id="status-icon" class="text-4xl mb-4">📍</div>
+            <h2 class="text-xl font-bold mb-2">Publicar Cambios</h2>
+            <p class="text-sm text-slate-400 mb-6">Actualizarás las coordenadas en GitHub para el modelo seleccionado.</p>
+            <button onclick="publishToGitHub()" id="btn-pub" class="w-full accent-lavender hover:opacity-90 py-4 rounded-2xl font-bold">
+                ENVIAR A GITHUB
+            </button>
+            <p id="status-msg" class="mt-4 text-xs font-mono text-slate-500"></p>
         </div>
     </div>
 
     <script>
+        // Cargar datos guardados
         document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
-        function saveToken() { localStorage.setItem('gh_token', document.getElementById('gh-token').value); alert("Token guardado"); }
+        
+        const models = {
+            'modelo-silla': './chair+3d+model.glb',
+            'modelo-tripo': './tripo_pbr_model_2.glb'
+        };
 
-        function updatePreview() {
+        function updatePreviewModel() {
+            const selected = document.getElementById('model-selector').value;
+            document.getElementById('preview-entity').setAttribute('gltf-model', `url(${models[selected]})`);
+        }
+        updatePreviewModel();
+
+        function saveToken() {
+            localStorage.setItem('gh_token', document.getElementById('gh-token').value);
+            alert("Token guardado con éxito.");
+        }
+
+        function applyTransform() {
             const y = document.getElementById('posY').value;
             const s = document.getElementById('scale').value;
             const r = document.getElementById('rotY').value;
-            const mod = document.getElementById('preview-model');
-            mod.setAttribute('position', `0 ${y} 0`);
-            mod.setAttribute('scale', `${s} ${s} ${s}`);
-            mod.setAttribute('rotation', `0 ${r} 0`);
+            const ent = document.getElementById('preview-entity');
+            ent.setAttribute('position', `0 ${y} 0`);
+            ent.setAttribute('scale', `${s} ${s} ${s}`);
+            ent.setAttribute('rotation', `0 ${r} 0`);
         }
 
-        async function publish() {
+        async function publishToGitHub() {
             const token = document.getElementById('gh-token').value;
-            const log = document.getElementById('log');
-            if(!token) return alert("Falta el Token");
+            const modelId = document.getElementById('model-selector').value;
+            const btn = document.getElementById('btn-pub');
+            const msg = document.getElementById('status-msg');
 
-            log.innerText = "⏳ Conectando con GitHub...";
+            if(!token) return alert("Por favor, introduce tu Token.");
+
+            btn.disabled = true;
+            msg.innerText = "⏳ Leyendo index.html...";
+
             try {
                 const repo = 'vellaescola/xacobeo-ar-experience';
                 const url = `https://api.github.com/repos/${repo}/contents/index.html`;
-                
+
                 const res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
                 const data = await res.json();
                 let content = atob(data.content);
@@ -87,27 +115,34 @@
                 const y = document.getElementById('posY').value;
                 const s = document.getElementById('scale').value;
                 const r = document.getElementById('rotY').value;
-                
-                // Reemplazo inteligente basado en la ID
-                const regex = /id="modelo-ar"\s+position=".*?"\s+rotation=".*?"\s+scale=".*?"/;
-                const newAttr = `id="modelo-ar" position="0 ${y} 0" rotation="0 ${r} 0" scale="${s} ${s} ${s}"`;
-                content = content.replace(regex, newAttr);
 
+                // Regex precisa para encontrar el ID seleccionado y sus atributos
+                const regex = new RegExp(`id="${modelId}"\\s+src=".*?"\\s+position=".*?"\\s+rotation=".*?"\\s+scale=".*?"`, 'g');
+                const newAttributes = `id="${modelId}" src="#${modelId === 'modelo-silla' ? 'silla' : 'tripo'}" position="0 ${y} 0" rotation="0 ${r} 0" scale="${s} ${s} ${s}"`;
+                
+                content = content.replace(regex, newAttributes);
+
+                msg.innerText = "🚀 Subiendo cambios...";
                 const update = await fetch(url, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        message: "Update AR coords via Admin Panel",
+                        message: `Admin: Actualizado ${modelId}`,
                         content: btoa(content),
                         sha: data.sha
                     })
                 });
 
                 if(update.ok) {
-                    log.innerText = "✅ ¡Éxito! Tu App AR se está actualizando.";
-                    document.getElementById('btn-pub').classList.replace('accent-lavender', 'accent-emerald');
-                }
-            } catch (e) { log.innerText = "❌ Error: " + e.message; }
+                    msg.innerText = "✅ ¡Publicado! Espera 30s para ver los cambios.";
+                    btn.classList.replace('accent-lavender', 'accent-emerald');
+                } else { throw new Error("Error en la subida"); }
+
+            } catch (e) {
+                msg.innerText = "❌ Error: " + e.message;
+            } finally {
+                btn.disabled = false;
+            }
         }
     </script>
 </body>
