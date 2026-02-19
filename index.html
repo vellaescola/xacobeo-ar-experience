@@ -13,7 +13,8 @@
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; }
         
-        /* FUERZA BRUTA CSS: Mantenida exactamente igual */
+        /* FUERZA BRUTA CSS: 
+           Esto obliga a que el video y el canvas compartan EXACTAMENTE el mismo espacio */
         video, .a-canvas, .mindar-ui-overlay {
             width: 100vw !important;
             height: 100vh !important;
@@ -75,7 +76,17 @@
         <a-gltf-model src="./modelo2.glb" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
       </a-entity>
 
-    </a-scene> <script>
+      <a-entity mindar-image-target="targetIndex: 3">
+        <a-gltf-model src="./modelo3.glb" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
+      </a-entity>
+
+      <a-entity mindar-image-target="targetIndex: 4">
+        <a-gltf-model src="./modelo4.glb" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
+      </a-entity>
+
+    </a-scene>
+
+    <script>
         function startExperience() {
             document.getElementById('splash').style.display = "none";
             document.getElementById('scanner-line').style.display = "block";
@@ -84,6 +95,7 @@
             const arSystem = sceneEl.systems["mindar-image-system"];
             arSystem.start();
 
+            // Refresco de dimensiones tras el arranque
             setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 500);
         }
 
