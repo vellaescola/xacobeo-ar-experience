@@ -1,157 +1,215 @@
 <!DOCTYPE html>
-<html lang="es">
+<html class="dark" lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Xacobeo AR - Admin Final</title>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <title>Xacobeo AR - Premium Admin</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-orbit-controls@1.3.2/dist/aframe-orbit-controls.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #0f172a; color: white; font-family: sans-serif; overflow-x: hidden; }
-        .stitch-card { background: #1e293b; border-radius: 16px; border: 1px solid #334155; margin-bottom: 1rem; }
-        input[type=range] { accent-color: #6366f1; height: 10px; width: 100%; }
-        .btn-view { background: #334155; padding: 12px; border-radius: 8px; font-size: 10px; font-weight: bold; color: white; border: 1px solid #475569; }
-    </style>
-</head>
-<body class="p-4 pb-20">
 
-    <div class="stitch-card p-4">
-        <h2 class="text-[10px] font-bold text-slate-400 uppercase mb-2">Paso 1: Seguridad</h2>
-        <input type="password" id="gh-token" placeholder="ghp_..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-white mb-3">
-        <div class="flex gap-2">
-            <label class="flex-1 bg-indigo-600 p-3 rounded text-[10px] text-center cursor-pointer font-bold uppercase">📁 Cargar GLB<input type="file" accept=".glb" class="hidden" onchange="handleFile(this, 'model')"></label>
-            <label class="flex-1 bg-indigo-600 p-3 rounded text-[10px] text-center cursor-pointer font-bold uppercase">🖼️ Cargar Target<input type="file" accept="image/*" class="hidden" onchange="handleFile(this, 'target')"></label>
-        </div>
-    </div>
-
-    <div class="stitch-card overflow-hidden">
-        <div class="h-80 bg-black relative">
-            <div class="absolute top-2 left-2 z-50 flex gap-2">
-                <button onclick="setView('top')" class="btn-view">CENITAL</button>
-                <button onclick="setView('front')" class="btn-view">FRONTAL</button>
-            </div>
-            <a-scene embedded style="height: 100%; width: 100%" vr-mode-ui="enabled: false">
-                <a-sky color="#0f172a"></a-sky>
-                <a-image id="ground-img" position="0 0 0" rotation="-90 0 0" width="4" height="4" visible="false"></a-image>
-                <a-entity id="preview-entity" gltf-model="" position="0 0.1 0" rotation="0 0 0" scale="1 1 1"></a-entity>
-                <a-entity id="cam" camera orbit-controls="target: 0 0.1 0; initialPosition: 0 2 5; enablePan: false;"></a-entity>
-            </a-scene>
-        </div>
-
-        <div class="p-4 space-y-4 bg-slate-900/40">
-            <select id="target-index" class="w-full bg-slate-800 border border-slate-700 p-3 rounded text-sm font-bold text-indigo-300">
-                <option value="0">Modelo en Target Index 0</option>
-                <option value="1">Modelo en Target Index 1</option>
-            </select>
-            <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-slate-400">ALTURA Y: <span id="val-y">0.1</span></label>
-                <input type="range" id="posY" min="-1.5" max="3" step="0.01" value="0.1" oninput="apply()"></div>
-                <div><label class="text-[10px] text-slate-400">ESCALA: <span id="val-s">1.0</span></label>
-                <input type="range" id="scale" min="0.05" max="8" step="0.05" value="1" oninput="apply()"></div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-indigo-400 font-bold uppercase">ROTACIÓN X: <span id="val-rx">0</span>°</label>
-                <input type="range" id="rotX" min="0" max="360" step="1" value="0" oninput="apply()"></div>
-                <div><label class="text-[10px] text-indigo-400 font-bold uppercase">ROTACIÓN Y: <span id="val-ry">0</span>°</label>
-                <input type="range" id="rotY" min="0" max="360" step="1" value="0" oninput="apply()"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="p-2">
-        <button onclick="publish()" id="btn-pub" class="bg-indigo-500 w-full py-5 rounded-2xl font-bold text-lg shadow-2xl active:scale-95 transition-all">
-            🚀 GUARDAR CAMBIOS EN GITHUB
-        </button>
-        <p id="status" class="text-center text-[11px] mt-4 font-mono text-slate-400 uppercase tracking-widest italic">Listo para editar</p>
-    </div>
-
-    <script>
-        document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
-
-        function handleFile(input, type) {
-            const file = input.files[0]; if (!file) return;
-            if(type === 'model') document.getElementById('preview-entity').setAttribute('gltf-model', URL.createObjectURL(file));
-            else {
-                const reader = new FileReader();
-                reader.onload = (e) => { 
-                    const img = document.getElementById('ground-img');
-                    img.setAttribute('src', e.target.result); 
-                    img.setAttribute('visible', 'true'); 
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function setView(view) {
-            const cam = document.getElementById('cam');
-            if(view === 'top') cam.setAttribute('position', '0 6 0');
-            if(view === 'front') cam.setAttribute('position', '0 0.5 5');
-        }
-
-        function apply() {
-            const y = document.getElementById('posY').value, s = document.getElementById('scale').value;
-            const rx = document.getElementById('rotX').value, ry = document.getElementById('rotY').value;
-            document.getElementById('val-y').innerText = y; document.getElementById('val-s').innerText = s;
-            document.getElementById('val-rx').innerText = rx; document.getElementById('val-ry').innerText = ry;
-            const ent = document.getElementById('preview-entity');
-            ent.setAttribute('position', `0 ${y} 0`); ent.setAttribute('scale', `${s} ${s} ${s}`); ent.setAttribute('rotation', `${rx} ${ry} 0`);
-        }
-
-        async function publish() {
-            const token = document.getElementById('gh-token').value.trim();
-            const targetIdx = document.getElementById('target-index').value;
-            const status = document.getElementById('status');
-            const btn = document.getElementById('btn-pub');
-
-            if(!token) return alert("Por favor, pega el token de GitHub");
-            localStorage.setItem('gh_token', token);
-            
-            btn.disabled = true;
-            status.innerHTML = "⏳ CONECTANDO CON REPOSITORIO...";
-
-            try {
-                const repo = 'vellaescola/xacobeo-ar-experience';
-                const url = `https://api.github.com/repos/${repo}/contents/index.html`;
-
-                const res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
-                if(!res.ok) throw new Error("No se pudo acceder. Verifica el Token.");
-                
-                const data = await res.json();
-                let html = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
-
-                // Valores actuales del editor
-                const y = document.getElementById('posY').value, s = document.getElementById('scale').value;
-                const rx = document.getElementById('rotX').value, ry = document.getElementById('rotY').value;
-
-                // BUSCADOR ULTRA-FLEXIBLE: 
-                // Busca cualquier etiqueta que contenga "targetIndex: X" y luego el primer a-gltf-model que encuentre
-                const regexPattern = `(targetIndex:\\s*${targetIdx}[\\s\\S]*?<a-gltf-model[\\s\\S]*?position\\s*=\\s*")([^"]*)("[\\s\\S]*?rotation\\s*=\\s*")([^"]*)("[\\s\\S]*?scale\\s*=\\s*")([^"]*)(")`;
-                const regex = new RegExp(regexPattern, 'i');
-
-                if(!regex.test(html)) {
-                    throw new Error(`No se encontró el bloque del Target ${targetIdx}.`);
-                }
-
-                const newHtml = html.replace(regex, `$10 ${y} 0$3${rx} ${ry} 0$5${s} ${s} ${s}$7`);
-                const base64Content = btoa(unescape(encodeURIComponent(newHtml)));
-
-                status.innerHTML = "🚀 ESCRIBIENDO CAMBIOS...";
-                const push = await fetch(url, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: `Admin: Ajuste Visual Target ${targetIdx}`, content: base64Content, sha: data.sha })
-                });
-
-                if(push.ok) status.innerHTML = "<span class='text-emerald-400 font-bold'>✅ ¡GUARDADO CON ÉXITO!</span>";
-                else throw new Error("Fallo al subir datos a GitHub.");
-
-            } catch (e) {
-                status.innerHTML = `<span class='text-red-500 font-bold'>❌ ERROR: ${e.message}</span>`;
-            } finally {
-                btn.disabled = false;
-            }
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: { "primary": "#9e26e8", "background-dark": "#0f172a" },
+                    fontFamily: { "display": ["Space Grotesk", "sans-serif"] }
+                },
+            },
         }
     </script>
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #0f172a; color: white; }
+        .glass-panel { background: rgba(158, 38, 232, 0.05); backdrop-filter: blur(8px); border: 1px solid rgba(158, 38, 232, 0.2); }
+        .glow-border { box-shadow: 0 0 15px rgba(158, 38, 232, 0.15); }
+        input[type="range"] { -webkit-appearance: none; background: transparent; }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 6px; background: rgba(158, 38, 232, 0.2); border-radius: 3px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #9e26e8; cursor: pointer; margin-top: -7px; box-shadow: 0 0 10px rgba(158, 38, 232, 0.5); }
+    </style>
+</head>
+
+<body class="bg-background-dark min-h-screen pb-24">
+
+<header class="p-6 pt-12">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight">Xacobeo AR</h1>
+            <p class="text-xs text-primary/80 font-medium uppercase tracking-widest">Premium Dashboard</p>
+        </div>
+        <div class="size-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+            <span class="material-symbols-outlined text-primary">admin_panel_settings</span>
+        </div>
+    </div>
+    <div class="space-y-2">
+        <label class="text-xs font-semibold text-slate-400 uppercase ml-1">GitHub Integration</label>
+        <div class="relative">
+            <input class="w-full bg-slate-900/50 border border-slate-800 rounded-xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-white" id="gh-token" placeholder="Enter gh-token" type="password"/>
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">lock</span>
+        </div>
+    </div>
+</header>
+
+<section class="px-6 mb-8">
+    <div class="grid grid-cols-2 gap-4">
+        <label class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 cursor-pointer">
+            <span class="material-symbols-outlined text-primary text-3xl">view_in_ar</span>
+            <span class="text-xs font-bold uppercase">GLB Model</span>
+            <input type="file" accept=".glb" class="hidden" onchange="handleFile(this, 'model')">
+        </label>
+        <label class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-dashed border-slate-700 bg-slate-900/50 cursor-pointer">
+            <span class="material-symbols-outlined text-slate-400 text-3xl">target</span>
+            <span class="text-xs font-bold uppercase text-slate-400">Target Image</span>
+            <input type="file" accept="image/*" class="hidden" onchange="handleFile(this, 'target')">
+        </label>
+    </div>
+</section>
+
+<section class="px-4 mb-8">
+    <div class="relative w-full h-[350px] rounded-2xl overflow-hidden bg-black border border-slate-800 glow-border">
+        <a-scene embedded style="height: 100%; width: 100%" vr-mode-ui="enabled: false">
+            <a-sky color="#0f172a"></a-sky>
+            <a-image id="ground-img" position="0 0 0" rotation="-90 0 0" width="3" height="3" visible="false"></a-image>
+            <a-entity id="preview-entity" gltf-model="" position="0 0.1 0" rotation="0 0 0" scale="1 1 1"></a-entity>
+            <a-entity id="cam" camera orbit-controls="target: 0 0.1 0; initialPosition: 0 1.5 4; enablePan: false;"></a-entity>
+        </a-scene>
+        
+        <div class="absolute top-4 right-4 flex flex-col gap-2 z-50">
+            <button onclick="setView('top')" class="glass-panel px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border-primary/40 text-white">
+                <span class="material-symbols-outlined text-sm">grid_view</span> Top
+            </button>
+            <button onclick="setView('front')" class="glass-panel px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border-primary/40 text-white">
+                <span class="material-symbols-outlined text-sm">rectangle</span> Front
+            </button>
+        </div>
+    </div>
+</section>
+
+<section class="px-6 space-y-8">
+    <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400">Model Config</h3>
+        <select class="bg-slate-900 border border-slate-700 rounded-lg text-xs py-1.5 pl-3 pr-8 text-primary font-bold" id="target-index">
+            <option value="0">Target #0 (Silla)</option>
+            <option value="1">Target #1 (Tripo)</option>
+        </select>
+    </div>
+
+    <div class="space-y-6">
+        <div class="space-y-3">
+            <div class="flex justify-between">
+                <label class="text-xs font-bold text-slate-400 uppercase">Height (Y)</label>
+                <span class="font-mono text-sm font-bold text-primary" id="val-y">0.10</span>
+            </div>
+            <input class="w-full" id="posY" max="3" min="-1.5" step="0.01" type="range" value="0.1" oninput="apply()"/>
+        </div>
+
+        <div class="space-y-3">
+            <div class="flex justify-between">
+                <label class="text-xs font-bold text-slate-400 uppercase">Scale</label>
+                <span class="font-mono text-sm font-bold text-primary" id="val-s">1.00</span>
+            </div>
+            <input class="w-full" id="scale" max="8" min="0.05" step="0.05" type="range" value="1" oninput="apply()"/>
+        </div>
+
+        <div class="grid grid-cols-2 gap-8">
+            <div class="space-y-3">
+                <label class="text-[10px] font-bold text-slate-400 uppercase text-center block">Rot X: <span id="val-rx">0</span>°</label>
+                <input class="w-full" id="rotX" max="360" min="0" type="range" value="0" oninput="apply()"/>
+            </div>
+            <div class="space-y-3">
+                <label class="text-[10px] font-bold text-slate-400 uppercase text-center block">Giro Y: <span id="val-ry">0</span>°</label>
+                <input class="w-full" id="rotY" max="360" min="0" type="range" value="0" oninput="apply()"/>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-primary/5 border border-primary/20 p-3 rounded-lg text-center text-xs text-primary font-bold" id="status">
+        Ready to deploy
+    </div>
+
+    <button onclick="publish()" class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-primary/30" id="btn-pub">
+        <span class="material-symbols-outlined">publish</span> SAVE TO GITHUB
+    </button>
+</section>
+
+<script>
+    // Inicialización
+    document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
+
+    function handleFile(input, type) {
+        const file = input.files[0]; if (!file) return;
+        if(type === 'model') document.getElementById('preview-entity').setAttribute('gltf-model', URL.createObjectURL(file));
+        else {
+            const reader = new FileReader();
+            reader.onload = (e) => { 
+                const img = document.getElementById('ground-img');
+                img.setAttribute('src', e.target.result); img.setAttribute('visible', 'true'); 
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function setView(view) {
+        const cam = document.getElementById('cam');
+        if(view === 'top') cam.setAttribute('position', '0 6 0');
+        if(view === 'front') cam.setAttribute('position', '0 0.5 5');
+    }
+
+    function apply() {
+        const y = document.getElementById('posY').value, s = document.getElementById('scale').value;
+        const rx = document.getElementById('rotX').value, ry = document.getElementById('rotY').value;
+        document.getElementById('val-y').innerText = y; document.getElementById('val-s').innerText = s;
+        document.getElementById('val-rx').innerText = rx; document.getElementById('val-ry').innerText = ry;
+        const ent = document.getElementById('preview-entity');
+        ent.setAttribute('position', `0 ${y} 0`); ent.setAttribute('scale', `${s} ${s} ${s}`); ent.setAttribute('rotation', `${rx} ${ry} 0`);
+    }
+
+    async function publish() {
+        const token = document.getElementById('gh-token').value.trim();
+        const targetIdx = document.getElementById('target-index').value;
+        const status = document.getElementById('status');
+        const btn = document.getElementById('btn-pub');
+
+        if(!token) return alert("Pega el Token");
+        localStorage.setItem('gh_token', token);
+        btn.disabled = true;
+        status.innerText = "⏳ CONNECTING...";
+
+        try {
+            const repo = 'vellaescola/xacobeo-ar-experience';
+            const url = `https://api.github.com/repos/${repo}/contents/index.html`;
+            const res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
+            const data = await res.json();
+            let html = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
+
+            const y = document.getElementById('posY').value, s = document.getElementById('scale').value;
+            const rx = document.getElementById('rotX').value, ry = document.getElementById('rotY').value;
+
+            const regexPattern = `(targetIndex\\s*:\\s*${targetIdx}["'][\\s\\S]*?<a-gltf-model[\\s\\S]*?)(position\\s*=\\s*["'][^"']*["'])?([\\s\\S]*?rotation\\s*=\\s*["'][^"']*["'])?([\\s\\S]*?scale\\s*=\\s*["'][^"']*["'])?`;
+            const regex = new RegExp(regexPattern, 'i');
+            const replacement = `$1 position="0 ${y} 0" rotation="${rx} ${ry} 0" scale="${s} ${s} ${s}"`;
+            const newHtml = html.replace(regex, replacement);
+
+            status.innerText = "🚀 DEPLOYING...";
+            const base64Content = btoa(unescape(encodeURIComponent(newHtml)));
+            const push = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: `Update T${targetIdx} UI`, content: base64Content, sha: data.sha })
+            });
+
+            if(push.ok) status.innerHTML = "✅ SUCCESS! DEPLOYED";
+            else throw new Error("GitHub error");
+
+        } catch (e) {
+            status.innerHTML = "❌ ERROR: " + e.message;
+        } finally {
+            btn.disabled = false;
+        }
+    }
+</script>
+
 </body>
 </html>
