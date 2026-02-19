@@ -1,21 +1,74 @@
 <!DOCTYPE html>
-<html>
-  <head>
+<html lang="es" class="dark">
+<head>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Xacobeo AR - Experiencia</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
-    <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet"/>
     
-    <style>
-      body { margin: 0; overflow: hidden; touch-action: none; }
-    </style>
-  </head>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { "primary": "#9e26e8", "background-dark": "#0f172a" },
+                    fontFamily: { "display": ["Space Grotesk", "sans-serif"] }
+                }
+            }
+        }
+    </script>
 
-  <body>
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; background-color: #0f172a; margin: 0; overflow: hidden; }
+        .glass-ui { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(158, 38, 232, 0.3); }
+        .glow-button { box-shadow: 0 0 20px rgba(158, 38, 232, 0.4); transition: all 0.3s ease; }
+        .glow-button:active { transform: scale(0.95); box-shadow: 0 0 5px rgba(158, 38, 232, 0.2); }
+        
+        /* Pantalla de carga/inicio */
+        #splash {
+            position: fixed; inset: 0; z-index: 9999;
+            background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="splash" class="p-6 text-center">
+        <div class="mb-8 size-24 rounded-3xl bg-primary/20 flex items-center justify-center border border-primary/30 animate-pulse">
+            <svg class="w-12 h-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2 1m0 0L10 4m2 1v2.5M4 7l2-1M4 7l2 1M4 7v2.5M10 13l-2 1m2-1l-2-1m2 1v2.5M16 13l-2 1m2-1l-2-1m2 1v2.5" />
+            </svg>
+        </div>
+
+        <h1 class="text-white text-3xl font-bold tracking-tight mb-2">Xacobeo AR</h1>
+        <p class="text-primary/80 text-xs font-medium uppercase tracking-[0.2em] mb-10">Premium Experience</p>
+        
+        <div class="max-w-xs text-slate-400 text-sm mb-12 leading-relaxed">
+            Bienvenido a la experiencia de Realidad Aumentada. Apunta con tu cámara a los paneles informativos para visualizar los modelos.
+        </div>
+
+        <button onclick="startExperience()" class="glow-button bg-primary text-white font-bold py-5 px-10 rounded-2xl text-lg flex items-center gap-3">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            EMPEZAR ESCANEO
+        </button>
+    </div>
+
+    <div id="scanning-ui" class="hidden fixed bottom-10 left-0 right-0 z-50 px-6 pointer-events-none">
+        <div class="glass-ui max-w-xs mx-auto py-4 px-6 rounded-2xl text-center">
+            <div class="flex items-center justify-center gap-3">
+                <div class="size-2 bg-primary rounded-full animate-ping"></div>
+                <span class="text-white text-xs font-bold uppercase tracking-widest">Buscando panel...</span>
+            </div>
+        </div>
+    </div>
+
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind;" 
-      gesture-detector
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
@@ -29,24 +82,44 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-gltf-model position="0 1.65 0" rotation="0 136 0" scale="1.6 1.6 1.6"
-          class="clickable"
-          gesture-handler>
-        </a-gltf-model>
+        <a-gltf-model id="modelo-silla" src="#silla" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 1">
-        <a-gltf-model 
-          id="modelo-tripo" 
-          src="#tripo" 
-          position="0 0 0" 
-          rotation="0 0 0" 
-          scale="1 1 1"
-          class="clickable"
-          gesture-handler>
-        </a-gltf-model>
+        <a-gltf-model id="modelo-tripo" src="#tripo" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
       </a-entity>
-      
     </a-scene>
-  </body>
+
+    <script>
+        function startExperience() {
+            // Efecto de transición
+            const splash = document.getElementById('splash');
+            splash.style.transition = "opacity 0.8s ease, transform 0.8s ease";
+            splash.style.opacity = "0";
+            splash.style.transform = "scale(1.1)";
+            
+            setTimeout(() => {
+                splash.style.display = "none";
+                document.getElementById('scanning-ui').classList.remove('hidden');
+            }, 800);
+
+            // Iniciar cámara y motor AR
+            const sceneEl = document.querySelector('a-scene');
+            const arSystem = sceneEl.systems["mindar-image-system"];
+            arSystem.start();
+        }
+
+        // Ocultar mensaje de "Buscando" cuando se detecta un target
+        const targets = document.querySelectorAll('a-entity[mindar-image-target]');
+        targets.forEach(t => {
+            t.addEventListener("targetFound", () => {
+                document.getElementById('scanning-ui').style.opacity = "0";
+            });
+            t.addEventListener("targetLost", () => {
+                document.getElementById('scanning-ui').style.opacity = "1";
+            });
+        });
+    </script>
+
+</body>
 </html>
