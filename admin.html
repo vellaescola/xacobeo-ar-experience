@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Xacobeo AR - Admin Final</title>
+    <title>Xacobeo AR - Admin Final Fix</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-orbit-controls@1.3.2/dist/aframe-orbit-controls.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,17 +11,17 @@
         body { background-color: #0f172a; color: white; font-family: sans-serif; }
         .stitch-card { background: #1e293b; border-radius: 16px; border: 1px solid #334155; margin-bottom: 1rem; }
         input[type=range] { accent-color: #6366f1; height: 8px; width: 100%; }
-        .btn-view { background: #334155; padding: 8px; border-radius: 6px; font-size: 10px; font-weight: bold; }
+        .btn-view { background: #334155; padding: 10px; border-radius: 8px; font-size: 10px; font-weight: bold; color: white; }
     </style>
 </head>
 <body class="p-4">
 
     <div class="stitch-card p-4">
-        <h2 class="text-[10px] font-bold text-slate-400 uppercase mb-2">Seguridad y Archivos</h2>
-        <input type="password" id="gh-token" placeholder="Token ghp_..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white mb-3">
+        <h2 class="text-[10px] font-bold text-slate-400 uppercase mb-2">Paso 1: Configuración</h2>
+        <input type="password" id="gh-token" placeholder="Pega aquí tu token ghp_..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-white mb-3">
         <div class="flex gap-2">
-            <label class="flex-1 bg-indigo-600 p-2 rounded text-[10px] text-center cursor-pointer font-bold uppercase">📁 GLB<input type="file" accept=".glb" class="hidden" onchange="handleFile(this, 'model')"></label>
-            <label class="flex-1 bg-indigo-600 p-2 rounded text-[10px] text-center cursor-pointer font-bold uppercase">🖼️ Target<input type="file" accept="image/*" class="hidden" onchange="handleFile(this, 'target')"></label>
+            <label class="flex-1 bg-indigo-600 p-3 rounded text-[10px] text-center cursor-pointer font-bold uppercase">📁 Cargar GLB<input type="file" accept=".glb" class="hidden" onchange="handleFile(this, 'model')"></label>
+            <label class="flex-1 bg-indigo-600 p-3 rounded text-[10px] text-center cursor-pointer font-bold uppercase">🖼️ Cargar Target<input type="file" accept="image/*" class="hidden" onchange="handleFile(this, 'target')"></label>
         </div>
     </div>
 
@@ -35,35 +35,35 @@
                 <a-sky color="#0f172a"></a-sky>
                 <a-image id="ground-img" position="0 0 0" rotation="-90 0 0" width="4" height="4" visible="false"></a-image>
                 <a-entity id="preview-entity" gltf-model="" position="0 0.1 0" rotation="0 0 0" scale="1 1 1"></a-entity>
-                <a-entity id="cam" camera orbit-controls="target: 0 0.1 0; initialPosition: 0 2 5; enablePan: false;"></a-entity>
+                <a-entity id="cam" camera orbit-controls="target: 0 0.1 0; initialPosition: 0 2 5;"></a-entity>
             </a-scene>
         </div>
 
         <div class="p-4 space-y-4 bg-slate-900/40">
-            <select id="target-index" class="w-full bg-slate-800 border border-slate-700 p-2 rounded text-sm font-bold text-indigo-300">
-                <option value="0">Editar: Modelo en Target Index 0 (Silla)</option>
-                <option value="1">Editar: Modelo en Target Index 1 (Tripo)</option>
+            <select id="target-index" class="w-full bg-slate-800 border border-slate-700 p-3 rounded text-sm font-bold text-indigo-300">
+                <option value="0">Modelo en Target 0 (Silla)</option>
+                <option value="1">Modelo en Target 1 (Tripo)</option>
             </select>
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-slate-400 uppercase">Altura Y: <span id="val-y">0.1</span></label>
+                <div><label class="text-[10px] text-slate-400">ALTURA Y: <span id="val-y">0.1</span></label>
                 <input type="range" id="posY" min="-1" max="3" step="0.01" value="0.1" oninput="apply()"></div>
-                <div><label class="text-[10px] text-slate-400 uppercase">Escala: <span id="val-s">1.0</span></label>
+                <div><label class="text-[10px] text-slate-400">ESCALA: <span id="val-s">1.0</span></label>
                 <input type="range" id="scale" min="0.1" max="10" step="0.1" value="1" oninput="apply()"></div>
             </div>
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-indigo-400 font-bold uppercase">Rotación X: <span id="val-rx">0</span>°</label>
+                <div><label class="text-[10px] text-indigo-400 font-bold uppercase">ROTACIÓN X: <span id="val-rx">0</span>°</label>
                 <input type="range" id="rotX" min="0" max="360" step="1" value="0" oninput="apply()"></div>
-                <div><label class="text-[10px] text-indigo-400 font-bold uppercase">Giro Y: <span id="val-ry">0</span>°</label>
+                <div><label class="text-[10px] text-indigo-400 font-bold uppercase">GIRO Y: <span id="val-ry">0</span>°</label>
                 <input type="range" id="rotY" min="0" max="360" step="1" value="0" oninput="apply()"></div>
             </div>
         </div>
     </div>
 
-    <div class="stitch-card p-6 text-center">
-        <button onclick="publish()" id="btn-pub" class="bg-indigo-500 w-full py-4 rounded-2xl font-bold text-lg mb-2 shadow-lg active:scale-95 transition-transform">
-            🚀 GUARDAR EN GITHUB
+    <div class="p-4">
+        <button onclick="publish()" id="btn-pub" class="bg-indigo-500 w-full py-4 rounded-2xl font-bold text-lg shadow-xl active:bg-indigo-700">
+            🚀 GUARDAR CAMBIOS
         </button>
-        <p id="status" class="text-xs font-mono text-slate-400 italic">Listo para sincronizar.</p>
+        <p id="status" class="text-center text-xs mt-4 font-mono text-slate-400 uppercase tracking-widest">Listo</p>
     </div>
 
     <script>
@@ -74,7 +74,7 @@
             if(type === 'model') document.getElementById('preview-entity').setAttribute('gltf-model', URL.createObjectURL(file));
             else {
                 const reader = new FileReader();
-                reader.onload = (e) => { const img = document.getElementById('ground-img'); img.setAttribute('src', e.target.result); img.setAttribute('visible', 'true'); };
+                reader.onload = (e) => { document.getElementById('ground-img').setAttribute('src', e.target.result); document.getElementById('ground-img').setAttribute('visible', 'true'); };
                 reader.readAsDataURL(file);
             }
         }
@@ -100,47 +100,70 @@
             const status = document.getElementById('status');
             const btn = document.getElementById('btn-pub');
 
-            if(!token) return alert("⚠️ Error: Introduce el token");
+            if(!token) return alert("Error: Falta el Token");
             localStorage.setItem('gh_token', token);
+            
             btn.disabled = true;
-            status.innerHTML = "⏳ Leyendo index.html...";
+            status.innerHTML = "⏳ CONECTANDO...";
 
             try {
-                const url = `https://api.github.com/repos/vellaescola/xacobeo-ar-experience/contents/index.html`;
-                const res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
-                const data = await res.json();
+                const repo = 'vellaescola/xacobeo-ar-experience';
+                const path = 'index.html';
                 
-                // Decodificación UTF-8 robusta
-                const html = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
+                // 1. Obtener archivo (GET)
+                const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
 
-                // PARÁMETROS NUEVOS
+                if(!getRes.ok) throw new Error("Error de conexión. Revisa el Token.");
+                const data = await getRes.json();
+                
+                // Decodificar contenido
+                let html = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
+
+                // Nuevos valores
                 const y = document.getElementById('posY').value, s = document.getElementById('scale').value;
                 const rx = document.getElementById('rotX').value, ry = document.getElementById('rotY').value;
 
-                // REGEX MEJORADA: Busca el modelo dentro del targetIndex indicado
-                // Busca la etiqueta <a-entity ... targetIndex: X"> y luego el <a-gltf-model> que le sigue
-                const regexStr = `(targetIndex:\\s*${targetIdx}["'][\\s\\S]*?<a-gltf-model[\\s\\S]*?position=")([^"]*)("[\\s\\S]*?rotation=")([^"]*)("[\\s\\S]*?scale=")([^"]*)(")`;
-                const regex = new RegExp(regexStr, 'i');
+                // Regex para buscar por targetIndex
+                const regex = new RegExp(`(targetIndex:\\s*${targetIdx}[\\s\\S]*?position=")([^"]*)("[\\s\\S]*?rotation=")([^"]*)("[\\s\\S]*?scale=")([^"]*)(")`, 'i');
 
-                if(!regex.test(html)) {
-                    throw new Error(`No se encontró el bloque del Target ${targetIdx}. Revisa si en el index.html dice "targetIndex: ${targetIdx}"`);
-                }
+                if(!regex.test(html)) throw new Error(`No se encontró el bloque del Target ${targetIdx}`);
 
+                // Reemplazar
                 const newHtml = html.replace(regex, `$10 ${y} 0$3${rx} ${ry} 0$5${s} ${s} ${s}$7`);
+                
+                // Codificar a Base64
                 const base64Content = btoa(unescape(encodeURIComponent(newHtml)));
 
-                status.innerHTML = "🚀 Subiendo cambios...";
-                const push = await fetch(url, {
+                status.innerHTML = "🚀 ENVIANDO DATOS...";
+
+                // 2. Subir archivo (PUT)
+                const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
                     method: 'PUT',
-                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: `Admin: Ajuste Target ${targetIdx}`, content: base64Content, sha: data.sha })
+                    headers: { 
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify({
+                        message: `Admin: Update Target ${targetIdx}`,
+                        content: base64Content,
+                        sha: data.sha
+                    })
                 });
 
-                if(push.ok) status.innerHTML = "<span class='text-emerald-400 font-bold'>✅ ¡PUBLICADO CORRECTAMENTE!</span>";
-                else throw new Error("GitHub rechazó la subida. Revisa permisos del token.");
+                if(putRes.ok) {
+                    status.innerHTML = "<span class='text-emerald-400'>✅ ¡ÉXITO! GUARDADO</span>";
+                } else {
+                    const err = await putRes.json();
+                    throw new Error(err.message);
+                }
 
             } catch (e) {
-                status.innerHTML = `<span class='text-red-400 font-bold'>❌ ${e.message}</span>`;
+                status.innerHTML = `<span class='text-red-500'>❌ ERROR: ${e.message}</span>`;
+                console.error(e);
             } finally {
                 btn.disabled = false;
             }
