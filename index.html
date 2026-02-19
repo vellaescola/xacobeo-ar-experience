@@ -13,14 +13,15 @@
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Space Grotesk', sans-serif; background: #000; }
         
-        /* Pantalla de Inicio Premium */
+        /* Splash Screen - Diseño Stitch */
         #splash {
             position: fixed; inset: 0; z-index: 1000;
             background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease;
         }
 
-        /* Barra de Escaneo */
+        /* Barra de Escaneo Estilo Láser */
         #scanner-line {
             position: fixed; top: 0; left: 0; width: 100%; height: 4px;
             background: #9e26e8; box-shadow: 0 0 15px #9e26e8;
@@ -28,9 +29,8 @@
         }
         @keyframes scan { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
 
-        /* Forzar que A-Frame y MindAR ocupen todo el espacio disponible */
-        .mindar-ui-overlay { z-index: 500 !important; }
-        a-scene { width: 100vw; height: 100vh; }
+        /* Estilo de la etiqueta de carga de MindAR (para que no se vea el botón VR feo) */
+        .a-enter-vr { display: none !important; }
     </style>
 </head>
 <body>
@@ -65,7 +65,7 @@
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-light type="ambient" intensity="1"></a-light>
-        <a-light type="directional" position="0 10 10" intensity="0.5"></a-light>
+        <a-light type="directional" position="0 5 5" intensity="0.8"></a-light>
 
         <a-entity mindar-image-target="targetIndex: 0">
             <a-gltf-model src="#silla" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
@@ -78,13 +78,20 @@
 
     <script>
         function startExperience() {
-            document.getElementById('splash').style.display = 'none';
+            // Ocultamos la pantalla de inicio
+            const splash = document.getElementById('splash');
+            splash.style.opacity = '0';
+            setTimeout(() => { splash.style.display = 'none'; }, 500);
+            
+            // Activamos la barra de escaneo
             document.getElementById('scanner-line').style.display = 'block';
             
+            // Arrancamos el motor MindAR
             const sceneEl = document.querySelector('a-scene');
             const arSystem = sceneEl.systems["mindar-image-system"];
             arSystem.start(); 
 
+            // Control de visibilidad de la barra
             const targets = document.querySelectorAll('a-entity[mindar-image-target]');
             targets.forEach(t => {
                 t.addEventListener("targetFound", () => {
