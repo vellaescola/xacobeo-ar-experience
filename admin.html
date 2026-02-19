@@ -3,68 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xacobeo AR - Admin</title>
+    <title>Xacobeo AR - Admin Pro</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-orbit-controls@1.3.2/dist/aframe-orbit-controls.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0f172a; color: white; font-family: sans-serif; }
+        body { background-color: #0f172a; color: white; font-family: sans-serif; overflow-x: hidden; }
         .stitch-card { background: #1e293b; border-radius: 16px; border: 1px solid #334155; }
         .accent-lavender { background-color: #6366f1; }
-        input[type=range] { accent-color: #6366f1; }
+        input[type=range] { accent-color: #6366f1; height: 6px; }
     </style>
 </head>
-<body class="p-4">
+<body class="p-4 pb-20">
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div class="stitch-card p-4">
             <h2 class="text-xs font-bold uppercase text-slate-400 mb-2">GitHub Token</h2>
             <input type="password" id="gh-token" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
             <button onclick="saveToken()" class="mt-2 text-xs text-indigo-400 underline">Guardar token</button>
         </div>
         <div class="stitch-card p-4">
-            <h2 class="text-xs font-bold uppercase text-slate-400 mb-2">Cargar Archivos</h2>
+            <h2 class="text-xs font-bold uppercase text-slate-400 mb-2">Archivos</h2>
             <div class="flex gap-2">
-                <label class="flex-1 bg-slate-700 p-2 rounded text-xs text-center cursor-pointer">
-                    📁 Cargar GLB
-                    <input type="file" id="load-glb" accept=".glb" class="hidden" onchange="handleFile(this, 'model')">
-                </label>
-                <label class="flex-1 bg-slate-700 p-2 rounded text-xs text-center cursor-pointer">
-                    🖼️ Cargar Target
-                    <input type="file" id="load-img" accept="image/*" class="hidden" onchange="handleFile(this, 'target')">
-                </label>
+                <label class="flex-1 bg-slate-700 p-2 rounded text-xs text-center cursor-pointer">📁 GLB<input type="file" id="load-glb" accept=".glb" class="hidden" onchange="handleFile(this, 'model')"></label>
+                <label class="flex-1 bg-slate-700 p-2 rounded text-xs text-center cursor-pointer">🖼️ Target<input type="file" id="load-img" accept="image/*" class="hidden" onchange="handleFile(this, 'target')"></label>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="stitch-card overflow-hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="stitch-card overflow-hidden flex flex-col">
             <div class="h-80 bg-black relative">
+                <div class="absolute top-2 left-2 z-50 flex gap-2">
+                    <button onclick="setView('top')" class="bg-slate-800/80 p-2 rounded text-[10px] font-bold border border-slate-600">VISTA CENITAL</button>
+                    <button onclick="setView('front')" class="bg-slate-800/80 p-2 rounded text-[10px] font-bold border border-slate-600">VISTA FRONTAL</button>
+                </div>
+                
                 <a-scene embedded style="height: 100%; width: 100%">
                     <a-sky color="#0f172a"></a-sky>
                     <a-image id="ground-img" position="0 0 0" rotation="-90 0 0" width="4" height="4" visible="false"></a-image>
+                    
                     <a-entity id="preview-entity" gltf-model="" position="0 0.5 0" rotation="0 0 0" scale="1 1 1"></a-entity>
-                    <a-entity camera position="0 2 4" look-controls></a-entity>
+                    
+                    <a-entity id="camera-rig">
+                        <a-entity id="cam" camera 
+                            orbit-controls="target: 0 0.5 0; initialPosition: 0 2 4; minDistance: 1; maxDistance: 20; enablePan: false;"
+                            position="0 2 4">
+                        </a-entity>
+                    </a-entity>
                 </a-scene>
             </div>
-            <div class="p-4 space-y-4">
-                <select id="model-id" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-sm font-bold">
-                    <option value="modelo-silla">Silla (Target 0)</option>
-                    <option value="modelo-tripo">Tripo (Target 1)</option>
+            
+            <div class="p-4 space-y-3 bg-slate-900/50">
+                <select id="model-id" class="w-full bg-slate-800 border border-slate-700 p-2 rounded text-sm font-bold">
+                    <option value="modelo-silla">Editar: Silla (Target 0)</option>
+                    <option value="modelo-tripo">Editar: Tripo (Target 1)</option>
                 </select>
-                <div><label class="text-xs text-slate-400">Altura: <span id="val-y">0.5</span></label>
-                <input type="range" id="posY" min="-2" max="5" step="0.05" value="0.5" class="w-full" oninput="apply()"></div>
-                <div><label class="text-xs text-slate-400">Escala: <span id="val-s">1.0</span></label>
-                <input type="range" id="scale" min="0.1" max="8" step="0.1" value="1" class="w-full" oninput="apply()"></div>
-                <div><label class="text-xs text-slate-400">Rotación: <span id="val-r">0</span>°</label>
-                <input type="range" id="rotY" min="0" max="360" step="1" value="0" class="w-full" oninput="apply()"></div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[10px] text-slate-400">ALTURA (Y): <span id="val-y">0.5</span></label>
+                    <input type="range" id="posY" min="-2" max="5" step="0.05" value="0.5" class="w-full" oninput="apply()"></div>
+                    <div><label class="text-[10px] text-slate-400">ESCALA: <span id="val-s">1.0</span></label>
+                    <input type="range" id="scale" min="0.01" max="8" step="0.05" value="1" class="w-full" oninput="apply()"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[10px] text-slate-400 text-indigo-400 font-bold">ROTACIÓN X (Eje X): <span id="val-rx">0</span>°</label>
+                    <input type="range" id="rotX" min="0" max="360" step="1" value="0" class="w-full" oninput="apply()"></div>
+                    <div><label class="text-[10px] text-slate-400">ROTACIÓN Y (Giro): <span id="val-ry">0</span>°</label>
+                    <input type="range" id="rotY" min="0" max="360" step="1" value="0" class="w-full" oninput="apply()"></div>
+                </div>
             </div>
         </div>
 
-        <div class="stitch-card p-8 text-center flex flex-col justify-center">
-            <button onclick="publish()" id="btn-pub" class="accent-lavender w-full py-4 rounded-2xl font-bold text-lg mb-4 shadow-lg shadow-indigo-500/20">
-                🚀 GUARDAR EN GITHUB
+        <div class="stitch-card p-6 text-center flex flex-col justify-center border-t-4 border-t-indigo-500">
+            <button onclick="publish()" id="btn-pub" class="accent-lavender w-full py-4 rounded-2xl font-bold text-lg mb-3 shadow-lg">
+                🚀 PUBLICAR EN GITHUB
             </button>
-            <p id="status" class="text-xs font-mono text-slate-500 italic">Listo para publicar.</p>
+            <p id="status" class="text-xs font-mono text-slate-500 italic">Puedes rotar la vista deslizando el dedo sobre el visor.</p>
         </div>
     </div>
 
@@ -73,9 +88,7 @@
         function saveToken() { localStorage.setItem('gh_token', document.getElementById('gh-token').value); alert("Token guardado"); }
 
         function handleFile(input, type) {
-            const file = input.files[0];
-            if (!file) return;
-
+            const file = input.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
                 const dataUrl = e.target.result;
@@ -87,25 +100,29 @@
                     imgEl.setAttribute('visible', 'true');
                 }
             };
-            
-            if(type === 'model') {
-                // Para el modelo seguimos usando URL.createObjectURL porque es más eficiente con archivos grandes
-                document.getElementById('preview-entity').setAttribute('gltf-model', URL.createObjectURL(file));
-            } else {
-                // Para la imagen usamos FileReader (Base64) que es infalible
-                reader.readAsDataURL(file);
-            }
+            if(type === 'model') document.getElementById('preview-entity').setAttribute('gltf-model', URL.createObjectURL(file));
+            else reader.readAsDataURL(file);
+        }
+
+        function setView(view) {
+            const camEl = document.getElementById('cam');
+            if(view === 'top') camEl.setAttribute('position', '0 6 0.01');
+            if(view === 'front') camEl.setAttribute('position', '0 0.5 5');
         }
 
         function apply() {
-            const y = document.getElementById('posY').value, s = document.getElementById('scale').value, r = document.getElementById('rotY').value;
+            const y = document.getElementById('posY').value, s = document.getElementById('scale').value;
+            const rx = document.getElementById('rotX').value, ry = document.getElementById('rotY').value;
+            
             document.getElementById('val-y').innerText = y;
             document.getElementById('val-s').innerText = s;
-            document.getElementById('val-r').innerText = r;
+            document.getElementById('val-rx').innerText = rx;
+            document.getElementById('val-ry').innerText = ry;
+
             const ent = document.getElementById('preview-entity');
             ent.setAttribute('position', `0 ${y} 0`);
             ent.setAttribute('scale', `${s} ${s} ${s}`);
-            ent.setAttribute('rotation', `0 ${r} 0`);
+            ent.setAttribute('rotation', `${rx} ${ry} 0`);
         }
 
         async function publish() {
@@ -114,26 +131,30 @@
             const status = document.getElementById('status');
             if(!token) return alert("Falta Token");
 
-            status.innerText = "⏳ Conectando con GitHub...";
+            status.innerText = "⏳ Publicando...";
             try {
                 const url = `https://api.github.com/repos/vellaescola/xacobeo-ar-experience/contents/index.html`;
                 const res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
                 const data = await res.json();
                 let html = atob(data.content);
 
-                const y = document.getElementById('posY').value, s = document.getElementById('scale').value, r = document.getElementById('rotY').value;
+                const y = document.getElementById('posY').value, s = document.getElementById('scale').value;
+                const rx = document.getElementById('rotX').value, ry = document.getElementById('rotY').value;
+
                 const regex = new RegExp(`id="${modelId}"[\\s\\S]*?position=".*?"[\\s\\S]*?rotation=".*?"[\\s\\S]*?scale=".*?"`, 'g');
                 const asset = modelId === 'modelo-silla' ? 'silla' : 'tripo';
-                const update = `id="${modelId}" src="#${asset}" position="0 ${y} 0" rotation="0 ${r} 0" scale="${s} ${s} ${s}"`;
+                const update = `id="${modelId}" src="#${asset}" position="0 ${y} 0" rotation="${rx} ${ry} 0" scale="${s} ${s} ${s}"`;
 
                 html = html.replace(regex, update);
 
-                await fetch(url, {
+                const response = await fetch(url, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: `Admin: ${modelId} mod`, content: btoa(unescape(encodeURIComponent(html))), sha: data.sha })
+                    body: JSON.stringify({ message: `Admin: ${modelId} pos/rot update`, content: btoa(unescape(encodeURIComponent(html))), sha: data.sha })
                 });
-                status.innerText = "✅ ¡Actualizado en GitHub!";
+                
+                if(response.ok) status.innerText = "✅ ¡GitHub actualizado!";
+                else status.innerText = "❌ Error al subir";
             } catch (e) { status.innerText = "❌ Error: " + e.message; }
         }
     </script>
