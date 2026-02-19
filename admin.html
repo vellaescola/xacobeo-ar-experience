@@ -25,11 +25,11 @@
         <div class="stitch-card p-4">
             <h2 class="text-xs font-bold uppercase text-slate-400 mb-2">Cargar Archivos (Previsualización)</h2>
             <div class="flex gap-2">
-                <label class="flex-1 bg-slate-700 hover:bg-slate-600 p-2 rounded text-xs text-center cursor-pointer transition-colors">
+                <label class="flex-1 bg-slate-700 hover:bg-slate-600 p-2 rounded text-xs text-center cursor-pointer transition-colors border border-dashed border-slate-500">
                     📁 Cargar GLB
                     <input type="file" id="load-glb" accept=".glb" class="hidden" onchange="handleFile(this, 'model')">
                 </label>
-                <label class="flex-1 bg-slate-700 hover:bg-slate-600 p-2 rounded text-xs text-center cursor-pointer transition-colors">
+                <label class="flex-1 bg-slate-700 hover:bg-slate-600 p-2 rounded text-xs text-center cursor-pointer transition-colors border border-dashed border-slate-500">
                     🖼️ Cargar Target
                     <input type="file" id="load-img" accept="image/*" class="hidden" onchange="handleFile(this, 'target')">
                 </label>
@@ -41,15 +41,16 @@
         <div class="stitch-card overflow-hidden">
             <div class="h-80 bg-black relative">
                 <a-scene embedded style="height: 100%; width: 100%">
+                    <a-assets id="assets-panel"></a-assets>
                     <a-sky color="#0f172a"></a-sky>
-                    <a-plane id="ground" position="0 0 0" rotation="-90 0 0" width="4" height="4" material="shader: flat; color: #ffffff"></a-plane>
+                    <a-plane id="ground" position="0 0 0" rotation="-90 0 0" width="4" height="4" material="shader: flat; side: double; color: #ffffff"></a-plane>
                     <a-entity id="preview-entity" gltf-model="" position="0 0.5 0" rotation="0 0 0" scale="1 1 1"></a-entity>
                     <a-entity camera position="0 2 4" look-controls></a-entity>
                 </a-scene>
             </div>
             <div class="p-4 space-y-4">
                 <h3 class="text-sm font-bold text-slate-400 uppercase">Ajustes del Modelo</h3>
-                <select id="model-id" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-sm text-white">
+                <select id="model-id" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-sm text-white font-bold">
                     <option value="modelo-silla">Silla (Target Index 0)</option>
                     <option value="modelo-tripo">Tripo (Target Index 1)</option>
                 </select>
@@ -72,26 +73,24 @@
             <div class="stitch-card p-8 text-center flex-1 flex flex-col justify-center">
                 <div class="text-5xl mb-4">🚀</div>
                 <h2 class="text-xl font-bold mb-2">Publicar en GitHub</h2>
-                <p class="text-sm text-slate-400 mb-6 px-4">Esta acción actualizará el archivo <b>index.html</b> con las coordenadas que ves en pantalla.</p>
+                <p class="text-sm text-slate-400 mb-6 px-4 text-balance">Actualiza el archivo <b>index.html</b> en tu repositorio con la posición actual.</p>
                 <button onclick="publishToGitHub()" id="btn-pub" class="accent-lavender hover:opacity-90 w-full py-4 rounded-2xl font-bold text-lg transition-all shadow-lg shadow-indigo-500/20">
                     GUARDAR CAMBIOS (LIVE)
                 </button>
-                <p id="status-msg" class="mt-4 text-xs font-mono text-slate-500 italic">Esperando cambios...</p>
+                <p id="status-msg" class="mt-4 text-xs font-mono text-slate-500 italic">Esperando archivos...</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Cargar Token de localStorage
         document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
 
         function saveToken() {
-            const token = document.getElementById('gh-token').value;
-            localStorage.setItem('gh_token', token);
-            alert("✅ Token guardado correctamente.");
+            localStorage.setItem('gh_token', document.getElementById('gh-token').value);
+            alert("✅ Token guardado.");
         }
 
-        // Manejo de archivos locales para previsualización
+        // FUNCIÓN CORREGIDA PARA CARGAR TARGET
         function handleFile(input, type) {
             const file = input.files[0];
             if (!file) return;
@@ -100,20 +99,28 @@
             if(type === 'model') {
                 document.getElementById('preview-entity').setAttribute('gltf-model', url);
             }
+            
             if(type === 'target') {
                 const plane = document.getElementById('ground');
-                // Forzamos actualización de textura para que no se vea blanco
-                plane.setAttribute('material', `src: ${url}; shader: flat; side: double`);
+                // Creamos un nuevo loader de texturas para forzar la carga
+                const loader = new THREE.TextureLoader();
+                loader.load(url, function(texture) {
+                    const mesh = plane.getObject3D('mesh');
+                    if (mesh) {
+                        mesh.material.map = texture;
+                        mesh.material.needsUpdate = true;
+                        mesh.material.color.set('#ffffff'); // Asegurar que no esté tintado
+                    }
+                });
+                document.getElementById('status-msg').innerText = "🖼️ Imagen de referencia cargada.";
             }
         }
 
-        // Aplicar transformaciones al visor en tiempo real
         function applyTransforms() {
             const y = document.getElementById('posY').value;
             const s = document.getElementById('scale').value;
             const r = document.getElementById('rotY').value;
             
-            // Actualizar etiquetas de texto
             document.getElementById('val-y').innerText = y;
             document.getElementById('val-s').innerText = s;
             document.getElementById('val-r').innerText = r;
@@ -124,30 +131,25 @@
             ent.setAttribute('rotation', `0 ${r} 0`);
         }
 
-        // Lógica de GitHub
         async function publishToGitHub() {
             const token = document.getElementById('gh-token').value;
             const modelId = document.getElementById('model-id').value;
             const msg = document.getElementById('status-msg');
             const btn = document.getElementById('btn-pub');
 
-            if(!token) return alert("⚠️ Error: Introduce tu GitHub Token.");
+            if(!token) return alert("⚠️ Introduce tu Token.");
 
             btn.disabled = true;
-            msg.innerText = "⏳ Leyendo repositorio...";
+            msg.innerText = "⏳ Conectando con GitHub...";
 
             try {
                 const repo = 'vellaescola/xacobeo-ar-experience';
                 const url = `https://api.github.com/repos/${repo}/contents/index.html`;
 
-                // 1. Obtener index.html actual
                 const res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
-                if(!res.ok) throw new Error("No se pudo acceder al repo. Revisa el Token.");
-                
                 const data = await res.json();
                 let htmlContent = atob(data.content);
 
-                // 2. Preparar nuevas coordenadas
                 const posY = document.getElementById('posY').value;
                 const scale = document.getElementById('scale').value;
                 const rotY = document.getElementById('rotY').value;
@@ -155,38 +157,30 @@
                 // Regex para encontrar el bloque del modelo seleccionado
                 const regex = new RegExp(`id="${modelId}"[\\s\\S]*?position=".*?"[\\s\\S]*?rotation=".*?"[\\s\\S]*?scale=".*?"`, 'g');
                 
-                // Determinamos el src correcto según el ID para no borrarlo
                 const assetName = modelId === 'modelo-silla' ? 'silla' : 'tripo';
                 const replacement = `id="${modelId}" src="#${assetName}" position="0 ${posY} 0" rotation="0 ${rotY} 0" scale="${scale} ${scale} ${scale}"`;
 
                 if (!regex.test(htmlContent)) {
-                    throw new Error("No se encontró el ID en el index.html. Revisa que el index sea el correcto.");
+                    throw new Error("No se encontró el ID en el index.html.");
                 }
 
                 htmlContent = htmlContent.replace(regex, replacement);
 
-                // 3. Subir a GitHub
-                msg.innerText = "🚀 Subiendo cambios a GitHub...";
+                msg.innerText = "🚀 Actualizando repositorio...";
                 const push = await fetch(url, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        message: `Admin Update: ${modelId} transform`,
+                        message: `Admin: ${modelId} pos ${posY}`,
                         content: btoa(unescape(encodeURIComponent(htmlContent))),
                         sha: data.sha
                     })
                 });
 
                 if(push.ok) {
-                    msg.innerText = "✅ ¡CAMBIOS PUBLICADOS! Revisa tu App AR en 30s.";
+                    msg.innerText = "✅ ¡PUBLICADO! Cambios activos en breve.";
                     btn.classList.add('accent-emerald');
-                    setTimeout(() => {
-                        btn.classList.remove('accent-emerald');
-                        btn.disabled = false;
-                        msg.innerText = "Listo para más cambios.";
-                    }, 5000);
-                } else {
-                    throw new Error("Fallo en el servidor de GitHub.");
+                    setTimeout(() => { btn.classList.remove('accent-emerald'); btn.disabled = false; }, 4000);
                 }
 
             } catch (e) {
