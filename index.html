@@ -84,7 +84,7 @@
       </a-entity>
     </a-scene>
 
-    <script>
+<script>
     function startExperience() {
         document.getElementById('splash').style.display = "none";
         document.getElementById('scanner-line').style.display = "block";
@@ -92,19 +92,34 @@
         const sceneEl = document.querySelector('a-scene');
         const arSystem = sceneEl.systems["mindar-image-system"];
         
-        // 1. Iniciamos el sistema
         arSystem.start();
 
-        // 2. PARCHE PARA EL MARGEN NEGRO:
-        // Forzamos a A-Frame a recalcular el tamaño del canvas 
-        // después de un breve delay para que MindAR ya haya cargado el video.
-        setTimeout(() => {
-            if (sceneEl.canvas) {
-                sceneEl.canvas.style.width = "100vw";
-                sceneEl.canvas.style.height = "100vh";
+        // --- PARCHE DE FUERZA BRUTA PARA EL MARGEN NEGRO ---
+        // Ejecutamos un intervalo que busque el video y lo estire cada 100ms
+        const fixVideo = setInterval(() => {
+            const video = document.querySelector('video');
+            const canvas = document.querySelector('.a-canvas');
+            
+            if (video && canvas) {
+                // Forzamos al video a cubrir toda la pantalla
+                video.style.width = "100vw";
+                video.style.height = "100vh";
+                video.style.objectFit = "cover";
+                video.style.position = "fixed";
+                video.style.top = "0";
+                video.style.left = "0";
+                
+                // Ajustamos el canvas para que coincida exactamente
+                canvas.style.width = "100vw";
+                canvas.style.height = "100vh";
+                
+                // Avisamos a A-Frame del cambio
                 window.dispatchEvent(new Event('resize'));
             }
-        }, 1000);
+        }, 100);
+
+        // Detenemos el intervalo tras 5 segundos para no consumir recursos
+        setTimeout(() => clearInterval(fixVideo), 5000);
     }
 
     const targets = document.querySelectorAll('a-entity[mindar-image-target]');
@@ -116,7 +131,7 @@
             document.getElementById('scanner-line').style.display = "block"; 
         });
     });
-    </script>
+        </script>
     
 </body>
 </html>
