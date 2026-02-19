@@ -4,16 +4,22 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Xacobeo AR</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet"/>
     
     <style>
-        body { margin: 0; overflow: hidden; background: #000; }
+        body { margin: 0; overflow: hidden; font-family: 'Space Grotesk', sans-serif; background-color: #000; }
         
-        /* Capa de la cámara: la dejamos que MindAR la gestione, 
-           pero nos aseguramos que el contenedor padre no tenga límites */
-        #container { position: relative; width: 100vw; height: 100vh; }
+        /* PARCHE VISUAL: En lugar de estirar el video (que rompe el 3D), 
+           centramos el canvas y aseguramos que el fondo sea negro profundo */
+        .a-canvas {
+            object-fit: contain !important; /* Mantiene la proporción para que el 3D no se pierda */
+            width: 100% !important;
+            height: 100% !important;
+        }
 
         #scanner-line {
             position: fixed; left: 0; width: 100%; height: 4px;
@@ -31,38 +37,45 @@
         }
     </style>
 </head>
+
 <body>
 
-    <div id="splash">
-        <button onclick="startExperience()" class="bg-purple-600 text-white font-bold py-5 px-10 rounded-2xl shadow-xl">EMPEZAR ESCANEO</button>
+    <div id="splash" class="p-8 text-center">
+        <div class="mb-8 mx-auto size-20 rounded-3xl bg-purple-600/20 flex items-center justify-center border border-purple-500/30">
+            <svg class="w-10 h-10 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+            </svg>
+        </div>
+        <h1 class="text-white text-3xl font-bold mb-2">Xacobeo AR</h1>
+        <p class="text-purple-400 text-xs font-bold uppercase tracking-widest mb-10">Escáner de Patrimonio</p>
+        <button onclick="startExperience()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 px-10 rounded-2xl shadow-xl active:scale-95 transition-all">EMPEZAR ESCANEO</button>
     </div>
 
     <div id="scanner-line"></div>
 
-    <div id="container">
-        <a-scene 
-          mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;" 
-          color-space="sRGB" 
-          renderer="colorManagement: true, physicallyCorrectLights: true" 
-          vr-mode-ui="enabled: false" 
-          device-orientation-permission-ui="enabled: false">
-          
-          <a-assets>
-            <a-asset-item id="silla" src="./chair+3d+model.glb"></a-asset-item>
-            <a-asset-item id="tripo" src="./tripo_pbr_model_2.glb"></a-asset-item>
-          </a-assets>
+    <a-scene 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;" 
+      embedded
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights: true" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
+      
+      <a-assets>
+        <a-asset-item id="silla" src="./chair+3d+model.glb"></a-asset-item>
+        <a-asset-item id="tripo" src="./tripo_pbr_model_2.glb"></a-asset-item>
+      </a-assets>
 
-          <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-          <a-entity mindar-image-target="targetIndex: 0">
-            <a-gltf-model src="#silla" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5"></a-gltf-model>
-          </a-entity>
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-gltf-model src="#silla" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
+      </a-entity>
 
-          <a-entity mindar-image-target="targetIndex: 1">
-            <a-gltf-model src="#tripo" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5"></a-gltf-model>
-          </a-entity>
-        </a-scene>
-    </div>
+      <a-entity mindar-image-target="targetIndex: 1">
+        <a-gltf-model src="#tripo" position="0 0 0" rotation="0 0 0" scale="1 1 1"></a-gltf-model>
+      </a-entity>
+    </a-scene>
 
     <script>
         function startExperience() {
@@ -71,14 +84,18 @@
 
             const sceneEl = document.querySelector('a-scene');
             const arSystem = sceneEl.systems["mindar-image-system"];
-            arSystem.start();
+            arSystem.start(); 
+            
+            // Forzamos un pequeño ajuste de tamaño suave
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 500);
         }
 
         const targets = document.querySelectorAll('a-entity[mindar-image-target]');
         targets.forEach(t => {
             t.addEventListener("targetFound", () => { 
                 document.getElementById('scanner-line').style.display = "none"; 
-                console.log("Detectado!");
             });
             t.addEventListener("targetLost", () => { 
                 document.getElementById('scanner-line').style.display = "block"; 
